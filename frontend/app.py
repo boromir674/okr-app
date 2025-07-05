@@ -37,12 +37,19 @@ def create_put_key_results_callback(data: KRUpdateDate):
     return put_key_results
 
 
+from key_results_card import KeyResultsCard
+
+
 def dashboard_ui():
     """Render the Dashboard UI."""
     st.header("Dashboard: Recent Objectives")
 
     response = requests.get(f"{BASE_URL}/objectives/")
     STEP = 1.0
+    
+    def set_progress_state(kr_id: int, value: float):
+        """Set the progress value in session state."""
+        st.session_state[f'progress_value_{kr_id}'] = value
 
     if response.status_code == 200:
         objectives = response.json()
@@ -59,48 +66,13 @@ def dashboard_ui():
                     with st.expander("Key Results"):
                         key_results_response = requests.get(f"{BASE_URL}/key_results/")
                         if key_results_response.status_code == 200:
-                            key_results = key_results_response.json()
-                            for kr in key_results:
-                                if kr["objective_id"] == obj["id"]:
 
-                                    ## STATE management ##
-                                    if not f'progress_value_{kr["id"]}' in st.session_state:
-                                        st.session_state[f'progress_value_{kr["id"]}'] = kr["progress"]
+                            all_key_results_in_db = key_results_response.json()
+                            key_results_of_current_objective = [kr for kr in all_key_results_in_db if kr["objective_id"] == obj["id"]]
 
-                                    # value to use for next render
-                                    progress_bar_value = st.session_state[f'progress_value_{kr["id"]}']
-                                    
-                                    st.write(kr['description'])
-                                    # 3-column grid with '-', progress, '+' design
-                                    # col 1 and 2 have very small buttons that "fit" text length
-                                    col1, col2, col3 = st.columns([1, 4, 1])
-                                    with col1:  # button with text '-'
-                                        if st.button("-", key=f"minus_{kr['id']}"):
-                                            st.session_state[f'progress_value_{kr["id"]}'] = progress - STEP
-                                    with col2:
-                                        # st.write(f"{kr['progress'] * 100:.0f}%")
-                                        progress = st.slider(
-                                            f"Progress for {kr['description']}",
-                                            min_value=0.0,
-                                            max_value=10.0,
-                                            value=progress_bar_value,
-                                            step=STEP,
-                                        )
-                                    with col3:
-                                        if st.button("+", key=f"plus_{kr['id']}"):
-                                            st.session_state[f'progress_value_{kr["id"]}'] = progress + STEP
-                                            # progress += STEP
-                                        
-                                    put_key_results = create_put_key_results_callback({
-                                        'progress': progress,  # use value of Interactive slider
-                                        'kr_id': kr['id']
-                                    })
-                                    if st.button(f"Update Progress for {kr['description']}"):
-                                        update_response = put_key_results()
-                                        if update_response.status_code == 200:
-                                            st.success("Progress updated successfully!")
-                                        else:
-                                            st.error(f"Failed to update progress: {update_response.status_code}")
+                            # Render Key Results Card for Objective
+                            key_results_card = KeyResultsCard(st, key_results_of_current_objective)
+                            key_results_card.render()
                         else:
                             st.error(f"Failed to fetch key results: {key_results_response.status_code} - {key_results_response.text}")
     else:

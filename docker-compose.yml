@@ -68,6 +68,7 @@ services:
     working_dir: /app
     volumes:
       - ./frontend/app.py:/app/app.py
+      - ./frontend/key_results_card.py:/app/key_results_card.py
     ports:
       - "8501:8501"
     depends_on:
