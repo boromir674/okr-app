@@ -1,5 +1,9 @@
 version: '3.8'
 
+networks:
+  okr_network:
+    driver: bridge
+
 services:
   backend:
     build:
@@ -9,19 +13,67 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/okr_db
+    networks:
+      - okr_network
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:latest
     environment:
+      # POSTGRES environment variables
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: okr_db
     ports:
-      - "5432:5432"
+      - "${DB_HOST_PORT:-5433}:5432"
     volumes:
+      # Raw data file storage
       - postgres_data:/var/lib/postgresql/data
+
+      # Hook to Postgres initialization process
+      # Mount Prod or Staging initialization sql script
+      # the file name can be arbitrary: ie init.sql, init_db.sql, db.sql, etc
+      - "./db/init_${OKR_APP_DEPLOY_MODE:-staging}.sql:/docker-entrypoint-initdb.d/init_db.sql"
+
+
+      # Mount SQL Script to initialize DB Schema (tables), imported in init_db.sql
+      - "./db/schema.sql:/db/schema.sql"
+
+      # Mount SQL Script to add toy data into tables, imported in init_db.sql, if empty DB and on Staging deployment
+      - "./db/data.sql:/db/data.sql"
+
+      # Schema initialization and staging data insertion sql scripts
+
+      # to verify if numbering works automatically without needing to add entrypoint
+      # - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      # - ./db/data.sql:/docker-entrypoint-initdb.d/02-data.sql
+
+      # Entrypoint wrapper script to control initialization
+      # - ./db/entrypoint.sh:/docker-entrypoint-initdb.d/entrypoint.sh
+    # entrypoint: ["/docker-entrypoint-initdb.d/entrypoint.sh"]  # Use custom entrypoint script
+    networks:
+      - okr_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    working_dir: /app
+    volumes:
+      - ./frontend/app.py:/app/app.py
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+    networks:
+      - okr_network
 
 volumes:
   postgres_data:

@@ -1,0 +1,78 @@
+# 'uv build' shall use the uv-backend (not masonry or setuptools)
+[tool.uv.build-backend]
+module-name = "yt_content_creation_toolkit"
+module-root = "src"
+
+# Required to allow `uv export -o p.txt` to add the '-e .' line in
+# required to make the --no-emit-project flag have an effect
+[tool.uv]
+package = true
+
+[project]
+name = "okr_api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+
+## ALLOWED PYTHON
+requires-python = ">=3.11, <3.13"
+
+## PROD DEPENDENCIES
+dependencies = [
+    # "aiohttp>=3.12.13",
+    # "asyncpg>=0.30.0",
+    "fastapi[standard]>=0.115.14",
+    # "sqlalchemy[asyncio]>=2.0.41",
+    "psycopg2-binary>=2.9.10",
+    "sqlalchemy>=2.0.41",
+    "uvicorn[standard]>=0.35.0",
+]
+
+
+
+
+# TOOLS
+
+[tool.pytest.ini_options]
+minversion = "6.2"
+addopts = "--strict-markers"
+markers = [
+    "slow: Marks a slow test",
+    "integration: Integration Tests",
+    "network_bound: Require internet connection",
+    "online: Require internet connection",
+    "runner_setup: Using click.testing.CliRunner",
+]
+testpaths = [
+    "tests",
+]
+explicit-only = [
+    "integration",
+    "network_bound",
+    "online",
+]
+
+## DEV SEC OPS
+[tool.bandit]
+exclude_dirs = ["tests/data", "path/to/file"]
+tests = []
+skips = [
+    "B101",
+]
+
+## MUTATION TESTS
+[tool.mutmut]
+tests_dir = "tests/"
+runner = "python -m pytest -n auto"
+
+paths_to_mutate = "src/yt_content_creation_toolkit"
+
+[tool.black]
+line-length = 95
+include = '\.pyi?$'
+extend-exclude = '''
+'''
+
+[tool.isort]
+profile = 'black'
+lines_after_imports = 2
