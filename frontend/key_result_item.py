@@ -5,7 +5,11 @@ import requests
 import json
 import os
 
+# Designed to render data
 from key_result_item_view import KeyResultItemView
+from key_result_item_v2 import KeyResultItemV2 as KeyResultItemView
+
+# Designed as to accept User input (ie input, sliders, forms)
 from key_result_item_edit import KeyResultItemEdit
 
 ## Helpers

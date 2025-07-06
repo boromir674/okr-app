@@ -44,16 +44,22 @@ def dashboard_ui():
             cols = st.columns(2)
             for i, obj in enumerate(objectives[slices[y][0]:slices[y][1]]):
                 with cols[i]:
+                    # RENDER Objective Name
                     st.subheader(obj["name"])
+                    # RENDER Objective Description
                     st.write(obj["description"])
+                    # RENDER expander, which pushes elemnt below in grid when opened !
                     with st.expander("Key Results"):
+
                         key_results_response = requests.get(f"{BASE_URL}/key_results/")
+
                         if key_results_response.status_code == 200:
 
                             all_key_results_in_db = key_results_response.json()
                             key_results_of_current_objective = sorted([kr for kr in all_key_results_in_db if kr["objective_id"] == obj["id"]], 
                                                                       key=lambda x: x["id"], reverse=False)
 
+                            # Key Results Card Component
                             # Render Key Results Card for Objective
                             key_results_card = KeyResultsCard(st, key_results_of_current_objective)
                             key_results_card.render()

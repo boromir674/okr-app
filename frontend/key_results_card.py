@@ -7,7 +7,7 @@ from key_result_item import KeyResultItem
 
 @define
 class KeyResultsCard:
-    """Container of Key Results belonging to the same Objective.
+    """Container Card of Key Results belonging to an Objective.
 
     Args:
         st (Any): Streamlit session state object.
