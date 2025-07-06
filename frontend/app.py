@@ -1,8 +1,12 @@
+import typing as t
 import streamlit as st
 import requests
 import json
+import os
 
-BASE_URL = "http://backend:8000"
+
+BASE_URL = os.environ['OKR_BACKEND_URL']
+
 
 def main():
     """Main function to render the Streamlit UI."""
@@ -18,38 +22,16 @@ def main():
     elif choice == "Key Results":
         key_results_ui()
 
-import typing as t
-class KRUpdateDate(t.TypedDict):
-    progress: float
-    kr_id: int
-
-
-def create_put_key_results_callback(data: KRUpdateDate):
-
-    def put_key_results():
-        payload = {"progress": data['progress']}
-        update_response = requests.put(
-            f"{BASE_URL}/key_results/{data['kr_id']}",
-            headers={"Content-Type": "application/json"},
-            data=json.dumps(payload),
-        )
-        return update_response
-    return put_key_results
-
 
 from key_results_card import KeyResultsCard
 
 
+# OKR Dashboard
 def dashboard_ui():
     """Render the Dashboard UI."""
     st.header("Dashboard: Recent Objectives")
 
     response = requests.get(f"{BASE_URL}/objectives/")
-    STEP = 1.0
-    
-    def set_progress_state(kr_id: int, value: float):
-        """Set the progress value in session state."""
-        st.session_state[f'progress_value_{kr_id}'] = value
 
     if response.status_code == 200:
         objectives = response.json()
@@ -78,6 +60,8 @@ def dashboard_ui():
     else:
         st.error(f"Failed to fetch objectives: {response.status_code} - {response.text}")
 
+
+# Objectives CRUD UI
 def objectives_ui():
     """Render the Objectives section UI."""
     st.header("Manage Objectives")
@@ -130,6 +114,7 @@ def objectives_ui():
             st.error(f"Failed to fetch progress: {response.status_code} - {response.text}")
 
 
+# Key Results CRUD UI
 def key_results_ui():
     """Render the redesigned Key Results section UI."""
     st.header("Manage Key Results")
@@ -138,7 +123,7 @@ def key_results_ui():
     st.subheader("Create Key Result")
     objective_id = st.number_input("Objective ID", min_value=1, step=1)
     description = st.text_area("Description")
-    progress = st.slider("Progress", min_value=0.0, max_value=1.0, step=0.01)
+    progress = st.slider("Progress", min_value=0, max_value=100, step=1)
     metric = st.text_input("Metric (Optional)")
     if st.button("Create Key Result"):
         payload = {"objective_id": objective_id, "description": description, "progress": progress, "metric": metric}
@@ -198,6 +183,7 @@ def key_results_ui():
             st.success("Key Result deleted successfully!")
         else:
             st.error(f"Failed to delete key result: {response.status_code} - {response.text}")
+
 
 if __name__ == "__main__":
     main()

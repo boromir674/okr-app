@@ -43,16 +43,6 @@ services:
 
       # Mount SQL Script to add toy data into tables, imported in init_db.sql, if empty DB and on Staging deployment
       - "./db/data.sql:/db/data.sql"
-
-      # Schema initialization and staging data insertion sql scripts
-
-      # to verify if numbering works automatically without needing to add entrypoint
-      # - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      # - ./db/data.sql:/docker-entrypoint-initdb.d/02-data.sql
-
-      # Entrypoint wrapper script to control initialization
-      # - ./db/entrypoint.sh:/docker-entrypoint-initdb.d/entrypoint.sh
-    # entrypoint: ["/docker-entrypoint-initdb.d/entrypoint.sh"]  # Use custom entrypoint script
     networks:
       - okr_network
     healthcheck:
@@ -65,10 +55,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    environment:
+      - OKR_BACKEND_URL=http://backend:8000
     working_dir: /app
     volumes:
       - ./frontend/app.py:/app/app.py
       - ./frontend/key_results_card.py:/app/key_results_card.py
+      - ./frontend/key_result_item.py:/app/key_result_item.py
+      - ./frontend/key_result_item_edit.py:/app/key_result_item_edit.py
+      - ./frontend/key_result_item_view.py:/app/key_result_item_view.py
+
     ports:
       - "8501:8501"
     depends_on:
