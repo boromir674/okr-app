@@ -8,11 +8,14 @@ import os
 BASE_URL = os.environ['OKR_BACKEND_URL']
 
 
+from knowledge_base import knowledge_base_ui
+
+
 def main():
     """Main function to render the Streamlit UI."""
     st.title("OKR Management Application")
     st.sidebar.title("Navigation")
-    options = ["Dashboard", "Objectives", "Key Results"]
+    options = ["Dashboard", "Objectives", "Key Results", "Knowledge Base"]
     choice = st.sidebar.radio("Choose a section", options)
 
     if choice == "Dashboard":
@@ -21,6 +24,8 @@ def main():
         objectives_ui()
     elif choice == "Key Results":
         key_results_ui()
+    elif choice == "Knowledge Base":
+        knowledge_base_ui()
 
 
 from key_results_card import KeyResultsCard

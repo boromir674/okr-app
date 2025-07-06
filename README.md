@@ -99,7 +99,7 @@ docker build -t okr-ui-dev -f ./frontend/Dockerfile ./frontend
 
 # Run Frontend on local host and 'okr_network_dev' network
 export OKR_BACKEND_URL='http://okr_api_dev:8000'
-docker run -it --rm --network okr_network_dev -e OKR_BACKEND_URL -v ./frontend/app.py:/app/app.py -v ./frontend/key_results_card.py:/app/key_results_card.py -v ./frontend/key_result_item.py:/app/key_result_item.py -v ./frontend/key_result_item_edit.py:/app/key_result_item_edit.py -v ./frontend/key_result_item_view.py:/app/key_result_item_view.py -v ./frontend/key_result_to_add_to_objective.py:/app/key_result_to_add_to_objective.py -v ./frontend/key_result_item_creation_ui.py:/app/key_result_item_creation_ui.py -v ./frontend/key_result_item_v2.py:/app/key_result_item_v2.py -p "8501:8501" -w /app --name okr_ui_dev okr-ui-dev
+docker run -it --rm --network okr_network_dev -e OKR_BACKEND_URL -v ./frontend/app.py:/app/app.py -v ./frontend/key_results_card.py:/app/key_results_card.py -v ./frontend/key_result_item.py:/app/key_result_item.py -v ./frontend/key_result_item_edit.py:/app/key_result_item_edit.py -v ./frontend/key_result_item_view.py:/app/key_result_item_view.py -v ./frontend/key_result_to_add_to_objective.py:/app/key_result_to_add_to_objective.py -v ./frontend/key_result_item_creation_ui.py:/app/key_result_item_creation_ui.py -v ./frontend/key_result_item_v2.py:/app/key_result_item_v2.py -v ./frontend/knowledge_base.py:/app/knowledge_base.py -p "8501:8501" -w /app --name okr_ui_dev okr-ui-dev
 ```
 
 ### Run SQL Queries against DB
