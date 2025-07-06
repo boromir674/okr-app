@@ -29,6 +29,7 @@ from key_results_card import KeyResultsCard
 # OKR Dashboard
 def dashboard_ui():
     """Render the Dashboard UI."""
+    # RENDER
     st.header("Dashboard: Recent Objectives")
 
     response = requests.get(f"{BASE_URL}/objectives/")
@@ -66,24 +67,92 @@ def dashboard_ui():
 def objectives_ui():
     """Render the Objectives section UI."""
     st.header("Manage Objectives")
-    
-    # Create Objective
+
+    # RENDER: Create Objective Section
     st.subheader("Create Objective")
     title = st.text_input("Title")
     description = st.text_area("Description")
+
+    # Nested Key Result Creation/Attachment
+    st.markdown("##### Key Results")
+
+    # STATE management
+    if "key_results_for_objective" not in st.session_state:
+        st.session_state["key_results_for_objective"] = []
+
+    from key_result_to_add_to_objective import KeyResultItemSelectedForObjectiveUnderConstruction as KRI
+
+    # RENDER KR items from session state data
+    c = st.container()
+    with c:
+        for i, kr in enumerate(st.session_state["key_results_for_objective"]):
+            col1, col2 = st.columns([4, 1])
+            key_result_item = KRI(st, kr)
+            with col1:
+                key_result_item.render()
+            with col2:
+                if st.button("Remove", key=f"remove_{kr['id']}"):
+                    st.session_state["key_results_for_objective"].remove(kr)
+                    st.success(f"Key Result '{kr['description']}' removed from Objective!")
+                    st.rerun()
+
+        # Popover for adding Key Results
+        with st.popover("Add Key Result"):
+            from key_result_item_creation_ui import KeyResultItemEditUI as KRI_UI
+            key_result_crud_ui = KRI_UI(st)
+            elements: t.List = key_result_crud_ui.render()
+
+            # Add and Clear buttons
+            cols = st.columns([1, 1], gap="small")
+            import uuid
+            with cols[0]:
+                if st.button("Add", key="add_new_key_result"):
+                    new_kr = {
+                        "id": uuid.uuid4().hex,
+                        "description": elements[0],
+                        "progress": elements[1],
+                        "metric": elements[2],
+                    }
+                    st.session_state["key_results_for_objective"].append(new_kr)
+                    st.success("New Key Result added to Objective!")
+                    st.rerun()
+            with cols[1]:
+                if st.button("Clear", key="clear_key_results"):
+                    for el in elements:
+                        del el
+                    st.rerun()
+
+    # RENDER CREATE OBJECTIVE BUTTON: Create Objective and Nested Key Results
     if st.button("Create Objective"):
-        # Ensure payload matches backend expectations
         payload = {"name": title, "description": description}
         response = requests.post(f"{BASE_URL}/objectives", 
                                  headers={"Content-Type": "application/json"},
                                  data=json.dumps(payload))
-        # Check if the response is successful
         if response.status_code == 200:
+            new_objective = response.json()
             st.success("Objective created successfully!")
+
+            for kr in st.session_state["key_results_for_objective"]:
+                kr_payload = {
+                    "objective_id": new_objective["id"],
+                    "description": kr["description"],
+                    "progress": kr["progress"],
+                    "metric": kr["metric"],
+                }
+                kr_response = requests.post(f"{BASE_URL}/key_results",
+                                            headers={"Content-Type": "application/json"},
+                                            data=json.dumps(kr_payload))
+                if kr_response.status_code == 200:
+                    st.success(f"Key Result '{kr['description']}' added successfully!")
+                else:
+                    st.error(f"Failed to add Key Result '{kr['description']}': {kr_response.status_code} - {kr_response.text}")
+
+            st.session_state["key_results_for_objective"] = []
+            st.rerun()
         else:
             st.error(f"Failed to create objective: {response.status_code} - {response.text}")
 
-    # Catalog of Objectives
+    # RENDER Catalog of Objectives
     st.subheader("Catalog of Objectives")
 
     # Fetch objectives
@@ -155,7 +224,7 @@ def objectives_ui():
     # Delete Objective
     st.subheader("Delete Objective")
     objective_id = st.number_input("Objective ID", min_value=1, step=1, value=None)
-    # Show O to be deleted, given ID (state)
+    # Show Objective to be deleted, given ID (state)
     if objective_id:
         response = requests.get(f"{BASE_URL}/objectives/{objective_id}")
         if response.status_code == 200:

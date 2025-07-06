@@ -77,7 +77,7 @@ class KeyResultItem:
 
     def render(self):
         """
-        Render the sinlge key result item.
+        Render the single key result item.
         """
         ## STATE management ##
         if not f'progress_value_{self._id}' in self.st.session_state:

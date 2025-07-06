@@ -64,6 +64,8 @@ services:
       - ./frontend/key_result_item.py:/app/key_result_item.py
       - ./frontend/key_result_item_edit.py:/app/key_result_item_edit.py
       - ./frontend/key_result_item_view.py:/app/key_result_item_view.py
+      - ./frontend/key_result_to_add_to_objective.py:/app/key_result_to_add_to_objective.py
+      - ./frontend/key_result_item_creation_ui.py:/app/key_result_item_creation_ui.py
 
     ports:
       - "8501:8501"
