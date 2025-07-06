@@ -54,7 +54,7 @@ async def read_key_results(db: Session = Depends(get_db_session)) -> t.List[t.Di
             "progress": kr.progress,
             "metric": kr.metric,
         }
-        for kr in key_results
+        for kr in sorted(key_results, lambda x: x.objective_id)
     ]
 
 @router.get("/key_results/{key_result_id}")

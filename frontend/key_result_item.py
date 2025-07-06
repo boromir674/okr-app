@@ -104,6 +104,8 @@ class KeyResultItem:
                 'progress': self._get_progress_state(self._id, progress_bar_value),  # use value from session state, where potentially user changes (through interactive UI) come
                 'kr_id': self.key_result['id']
             })
+
+            # RENDER SAVE BUTTON
             if self.st.button(f"Save Progress", key=f"update_{self.key_result['id']}"):
                 update_response = put_key_results()
                 if update_response.status_code == 200:
@@ -116,14 +118,19 @@ class KeyResultItem:
                     # key_result_item = KeyResultItemEdit(self.st, self.key_result)
                     # key_result_item.render()
                     
-                    # manually call re-run script !
+                    # manually call re-run script, because state changed
                     self.st.rerun()
                 else:
                     self.st.error(f"Failed to update progress: {update_response.status_code}")
 
         ## VIEW MODE
         else:
-            key_result_item = KeyResultItemView(self.st, self.key_result)
+            key_result_item = KeyResultItemView(self.st, {  # only progress is reactive
+                'id': self.key_result['id'],
+                'description': self.key_result['description'],
+                'progress': self._get_progress_state(self._id, progress_bar_value),
+                'metric': self.key_result.get('metric', None),
+            })
             # 2 columns where left column is 5:1 ratio in width to the right column
             cols = self.st.columns([5, 1])
             # render progress bar in left column

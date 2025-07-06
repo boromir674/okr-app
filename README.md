@@ -101,3 +101,24 @@ docker build -t okr-ui-dev -f ./frontend/Dockerfile ./frontend
 export OKR_BACKEND_URL='http://okr_api_dev:8000'
 docker run -it --rm --network okr_network_dev -e OKR_BACKEND_URL -v ./frontend/app.py:/app/app.py -v ./frontend/key_results_card.py:/app/key_results_card.py -v ./frontend/key_result_item.py:/app/key_result_item.py -v ./frontend/key_result_item_edit.py:/app/key_result_item_edit.py -v ./frontend/key_result_item_view.py:/app/key_result_item_view.py -p "8501:8501" -w /app --name okr_ui_dev okr-ui-dev
 ```
+
+### Run SQL Queries against DB
+
+```sh
+docker exec -it okr_db_dev psql -U postgres -d okr_db -c "SELECT progress FROM objectives WHERE id = 1; SELECT progress FROM key_results WHERE id = 1;"
+```
+
+```sh
+docker exec -it okr_db_dev psql -U postgres -d okr_db -c "
+SELECT 
+    o.id AS objective_id, 
+    o.name AS objective_name, 
+    o.progress AS objective_progress, 
+    kr.id AS key_result_id, 
+    kr.description AS key_result_description, 
+    kr.progress AS key_result_progress 
+FROM objectives o 
+LEFT JOIN key_results kr ON o.id = kr.objective_id 
+ORDER BY o.id, kr.id;
+"
+```

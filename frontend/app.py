@@ -50,7 +50,8 @@ def dashboard_ui():
                         if key_results_response.status_code == 200:
 
                             all_key_results_in_db = key_results_response.json()
-                            key_results_of_current_objective = [kr for kr in all_key_results_in_db if kr["objective_id"] == obj["id"]]
+                            key_results_of_current_objective = sorted([kr for kr in all_key_results_in_db if kr["objective_id"] == obj["id"]], 
+                                                                      key=lambda x: x["id"], reverse=False)
 
                             # Render Key Results Card for Objective
                             key_results_card = KeyResultsCard(st, key_results_of_current_objective)
@@ -82,36 +83,93 @@ def objectives_ui():
         else:
             st.error(f"Failed to create objective: {response.status_code} - {response.text}")
 
-    # Read Objectives
-    st.subheader("View Objectives")
-    response = requests.get(f"{BASE_URL}/objectives/")
-    if response.status_code == 200:
-        objectives = response.json()
-        for obj in objectives:
-            st.write(f"ID: {obj['id']}, Title: {obj['name']}, Description: {obj['description']}")
+    # Catalog of Objectives
+    st.subheader("Catalog of Objectives")
+
+    # Fetch objectives
+    objectives_response = requests.get(f"{BASE_URL}/objectives/")
+    if objectives_response.status_code == 200:
+        objectives = objectives_response.json()
     else:
-        st.error(f"Failed to fetch objectives: {response.status_code} - {response.text}")
+        st.error(f"Failed to fetch objectives: {objectives_response.status_code} - {objectives_response.text}")
+        return
+
+    # Fetch key results for mapping
+    key_results_response = requests.get(f"{BASE_URL}/key_results/")
+    key_results_map = {}
+    if key_results_response.status_code == 200:
+        key_results = key_results_response.json()
+        for kr in key_results:
+            if kr["objective_id"] not in key_results_map:
+                key_results_map[kr["objective_id"]] = []
+            key_results_map[kr["objective_id"]].append(kr)
+    else:
+        st.error(f"Failed to fetch key results: {key_results_response.status_code} - {key_results_response.text}")
+        return
+
+    # CSS for hover effect and styling
+    st.markdown("""
+    <style>
+    .objective-item {
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 8px;
+        transition: box-shadow 0.3s ease;
+    }
+    .objective-item:hover {
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .objective-item:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .objective-item:nth-child(odd) {
+        background-color: #ffffff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Render objectives in a catalog-style layout
+    for obj in objectives:
+        key_results_html = ""
+        if obj["id"] in key_results_map:
+            key_results_html = "".join(
+                f"<li>{kr['description']} - Progress: {kr['progress']}%</li>"
+                for kr in key_results_map[obj["id"]]
+            )
+        else:
+            key_results_html = "<li>No Key Results available.</li>"
+
+        objective_html = f"""
+        <div class="objective-item">
+            <h4>{obj['name']}</h4>
+            <p><strong>Description:</strong> {obj['description']}</p>
+            <p><strong>Progress:</strong> {obj['progress']}%</p>
+            <p><strong>Key Results:</strong></p>
+            <ul>
+                {key_results_html}
+            </ul>
+        </div>
+        """
+        st.markdown(objective_html, unsafe_allow_html=True)
 
     # Delete Objective
     st.subheader("Delete Objective")
-    objective_id = st.number_input("Objective ID", min_value=1, step=1)
+    objective_id = st.number_input("Objective ID", min_value=1, step=1, value=None)
+    # Show O to be deleted, given ID (state)
+    if objective_id:
+        response = requests.get(f"{BASE_URL}/objectives/{objective_id}")
+        if response.status_code == 200:
+            objective = response.json()
+            st.write(f"Objective to be deleted: {objective['name']} - {objective['description']}")
+        else:
+            st.error(f"Failed to fetch objective: {response.status_code} - {response.text}")
+    # Delete button
     if st.button("Delete Objective"):
         response = requests.delete(f"{BASE_URL}/objectives/{objective_id}")
         if response.status_code == 200:
             st.success("Objective deleted successfully!")
         else:
             st.error(f"Failed to delete objective: {response.status_code} - {response.text}")
-
-    # View Progress
-    st.subheader("View Progress")
-    progress_id = st.number_input("Objective ID for Progress", min_value=1, step=1)
-    if st.button("View Progress"):
-        response = requests.get(f"{BASE_URL}/objectives/{progress_id}/progress")
-        if response.status_code == 200:
-            progress = response.json()
-            st.write(f"Progress: {progress['progress']}")
-        else:
-            st.error(f"Failed to fetch progress: {response.status_code} - {response.text}")
 
 
 # Key Results CRUD UI
@@ -138,6 +196,17 @@ def key_results_ui():
 
     # READ Key Results
     st.subheader("Catalog of Key Results")
+    
+    # Fetch objectives for mapping
+    objectives_response = requests.get(f"{BASE_URL}/objectives/")
+    objectives_map = {}
+    if objectives_response.status_code == 200:
+        objectives = objectives_response.json()
+        objectives_map = {obj["id"]: obj["name"] for obj in objectives}
+    else:
+        st.error(f"Failed to fetch objectives: {objectives_response.status_code} - {objectives_response.text}")
+
+    # Fetch key results
     response = requests.get(f"{BASE_URL}/key_results/")
     if response.status_code == 200:
         key_results = response.json()
@@ -165,10 +234,12 @@ def key_results_ui():
 
         # Render key results in a catalog-style layout
         for kr in key_results:
+            objective_name = objectives_map.get(kr["objective_id"], "Unknown Objective")
             st.markdown(f"""
             <div class="key-result-item">
                 <h4>{kr['description']}</h4>
-                <p><strong>Progress:</strong> {kr['progress'] * 100:.0f}%</p>
+                <p><strong>Progress:</strong> {kr['progress']}%</p>
+                <p><strong>Objective:</strong> {objective_name}</p>
             </div>
             """, unsafe_allow_html=True)
     else:
