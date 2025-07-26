@@ -24,6 +24,9 @@ COPY --from=ghcr.io/astral-sh/uv@sha256:2381d6aa60c326b71fd40023f921a0a3b8f91b14
 # Export Exact/Pinned Prod (install only) dependencies, into pip format
 FROM builder AS prod_builder
 RUN uv export --no-dev --frozen --no-emit-project -f requirements-txt -o requirements.txt
+# Export Exact/Pinned Prod + Test dependencies, into pip format
+FROM builder AS test_builder
+RUN uv export --no-dev --frozen --no-emit-project --extra test -f requirements-txt -o requirements.txt
 
 
 #### PLACE SOURCE FILES - STAGE ####
@@ -102,7 +105,25 @@ COPY README.md .
 RUN pip install .
 
 
-## PROD - Leaf STAGE ##
+## Image for TEST ##
+FROM python_slim AS test
+WORKDIR /app
+## poc version ##
+COPY src src
+COPY pyproject.toml .
+COPY uv.lock .
+COPY README.md .
+RUN pip install .[test]
+
+
+# Add user's bin folder, to PATH to make biskotakigold CLI available
+ENV PATH="/root/.local/bin:$PATH"
+
+
+ENTRYPOINT [ "pytest" ]
+
+
+## Image for PROD ##
 
 FROM install AS prod
 
