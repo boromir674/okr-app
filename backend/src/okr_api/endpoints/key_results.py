@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from ..db import get_db_session
-from ..models import KeyResult
+from ..models2 import KeyResult
 from pydantic import BaseModel
 import typing as t
 
@@ -54,7 +54,7 @@ async def read_key_results(db: Session = Depends(get_db_session)) -> t.List[t.Di
             "progress": kr.progress,
             "metric": kr.metric,
         }
-        for kr in sorted(key_results, lambda x: x.objective_id)
+        for kr in sorted(key_results, key=lambda x: x.objective_id)
     ]
 
 @router.get("/key_results/{key_result_id}")

@@ -1,11 +1,13 @@
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
+
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql://postgres:password@db:5432/okr_db"
 )
 """Format is dialect[+driver]://user:password@host/dbname[?key=value..]"""
+
 
 try:
     engine = create_engine(DATABASE_URL, echo=True)
@@ -21,7 +23,7 @@ SessionLocal = sessionmaker(
     autoflush=False,
 )
 
-Base = declarative_base()
+# Base = declarative_base()
 
 def get_db_session():
     """Provide a synchronous database session.

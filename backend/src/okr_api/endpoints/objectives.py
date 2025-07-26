@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from ..db import get_db_session
-from ..models import Objective
+from ..models2 import Objective
 from pydantic import BaseModel
 import typing as t
 
