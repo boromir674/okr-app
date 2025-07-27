@@ -18,7 +18,7 @@ Useful for Staging deployment, where we want some toy data to be inserted in the
 
 ```sh
 export OKR_APP_DEPLOY_MODE='staging'
-docker-compose up --build
+docker-compose up frontend --build
 ```
 
 ### Delete staging data to start afresh db on init
@@ -109,7 +109,7 @@ docker exec -it okr_db_dev psql -U postgres -d okr_db -c "SELECT progress FROM o
 ```
 
 ```sh
-docker exec -it okr_db_dev psql -U postgres -d okr_db -c "
+docker exec -it okr_db_staging psql -U postgres -d okr_db -c "
 SELECT 
     o.id AS objective_id, 
     o.name AS objective_name, 

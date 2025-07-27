@@ -4,20 +4,28 @@
 
 - we change the SQLAlchemy Object Model, when we want to modify the Relational Data schema.
 
-Generate migrations script in `versions` folder
+
+To generate migrations
 ```sh
-alembic revision --autogenerate -m "<commit message>"
+docker-compose run -it --build --rm alembic revision --autogenerate -m "<commit-like message>"
 ```
 
-Sync live DB
+To upgrade live staging DB
 ```sh
-alembic upgrade head"
+docker-compose run -it --build --rm alembic upgrade head
 ```
+
+To downgrade live staging DB
+```sh
+docker-compose run -it --build --rm alembic downgrade <revision_id>
+```
+
 
 Generate SQL script and print in console
 ```sh
-alembic revision --sql -m "<commit message>"
+docker-compose run -it --build --rm alembic revision --sql -m "<commit message>"
 ```
+
 
 ## During development
 

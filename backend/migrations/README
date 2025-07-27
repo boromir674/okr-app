@@ -1,0 +1,35 @@
+Generic single-database configuration.
+
+
+Deploy the services in Staging: to work on DB migrations:
+
+
+```sh
+export OKR_APP_DEPLOY_MODE='staging'
+docker-compose up frontend --build
+```
+
+```sh
+uv venv env -p python3.11
+uv export --frozen --extra migrations -o "p+m.txt"
+source env/bin/activate
+uv pip install --no-deps -r "p+m.txt"
+```
+
+**Configure `sqlalchemy.url` in **alembic.ini** to point to DB service
+
+To generate migrations
+```sh
+alembic revision --autogenerate -m "<commit-like message>"
+```
+
+
+To upgrade live staging DB
+```sh
+alembic upgrade head"
+```
+
+To downgrade live staging DB
+```sh
+alembic downgrade <revision_id>
+```

@@ -1,4 +1,4 @@
-"""ORM - Data models in SQL Alchemy"""
+"""ORM - Declarative Data models in SQL Alchemy"""
 from sqlalchemy import Column, String, Text, Integer, ForeignKey
 from sqlalchemy.orm import declarative_base
 

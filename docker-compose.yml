@@ -6,6 +6,7 @@ networks:
 
 services:
   backend:
+    container_name: "okr_backend_${OKR_APP_DEPLOY_MODE:-staging}"
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -20,6 +21,7 @@ services:
         condition: service_healthy
 
   db:
+    container_name: "okr_db_${OKR_APP_DEPLOY_MODE:-staging}"
     image: postgres:latest
     environment:
       # POSTGRES environment variables
@@ -36,7 +38,6 @@ services:
       # Mount Prod or Staging initialization sql script
       # the file name can be arbitrary: ie init.sql, init_db.sql, db.sql, etc
       - "./db/init_${OKR_APP_DEPLOY_MODE:-staging}.sql:/docker-entrypoint-initdb.d/init_db.sql"
-
 
       # Mount SQL Script to initialize DB Schema (tables), imported in init_db.sql
       - "./db/schema.sql:/db/schema.sql"
@@ -56,7 +57,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      - OKR_BACKEND_URL=http://backend:8000
+      - OKR_BACKEND_URL=http://okr_backend_${OKR_APP_DEPLOY_MODE}:8000
     working_dir: /app
     volumes:
       - ./frontend/app.py:/app/app.py
@@ -76,6 +77,51 @@ services:
       - backend
     networks:
       - okr_network
+
+
+  # One-off database Migration command
+  alembic:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: alembic
+    volumes:
+      # Configure Alembic with correct sqlalchemy.url
+      - ./backend/alembic.ini:/app/alembic.ini
+      # Add migrations timeline/dependency chain
+      - ./backend/migrations:/app/migrations
+    networks:
+      - okr_network
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: "alembic"
+
+    # EG: Gen migration .py and run SQL: alembic revision --autogenerate -m "<commit message>"
+    #     docker-compose run -it --build --rm alembic revision --autogenerate -m "<commit-like message>"
+    
+    # EG: Gen migration .py and print SQL in console: alembic revision --sql -m "<commit message>"
+    #     docker-compose run -it --build --rm alembic revision --sql -m "<commit message>"
+
+
+  # One-off Test Database Schema command
+  # docker-compose run -it --build --rm test_db_schema
+  test_db_schema:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: test
+    volumes:
+      # mount test folder to make Tests available inside container
+      - ./backend/tests:/app/tests
+    networks:
+      - okr_network
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: "pytest"
+    command: ["-ra", "-vvs", "-k", "test_schema"]
+
 
 volumes:
   postgres_data:

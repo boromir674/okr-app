@@ -27,16 +27,17 @@ RUN uv export --no-dev --frozen --no-emit-project -f requirements-txt -o require
 # Export Exact/Pinned Prod + Test dependencies, into pip format
 FROM builder AS test_builder
 RUN uv export --no-dev --frozen --no-emit-project --extra test -f requirements-txt -o requirements.txt
+# Export Exact/Pinned Prod + Alembic dependencies, into pip format
+FROM builder AS alembic_deps
+RUN uv export --no-dev --frozen --no-emit-project --extra migrations -f requirements-txt -o requirements.txt
+
 
 
 #### PLACE SOURCE FILES - STAGE ####
 FROM scratch as source
-
 WORKDIR /app
-
 COPY --from=prod_builder requirements.txt .
 # Copy Source Code
-# COPY . .
 COPY src src
 COPY pyproject.toml .
 COPY uv.lock .
@@ -73,6 +74,38 @@ RUN uv build --wheel --out-dir "/tmp/build-wheels" && \
 
 # Now runtime required wheels are in DISTRO_WHEELS folder
 
+
+
+###### INSTALL ALEMBIC ENV - STAGE ######
+FROM python_slim AS alembic
+
+COPY --from=ghcr.io/astral-sh/uv@sha256:2381d6aa60c326b71fd40023f921a0a3b8f91b14d5db6b90402e65a635053709 /uv /uvx /bin/
+
+ARG DISTRO_WHEELS
+WORKDIR /app
+
+COPY --from=alembic_deps requirements.txt .
+
+# Build Wheels for Distro's Dependencies, from /app/requirements.txt file
+RUN pip wheel --wheel-dir "${DISTRO_WHEELS}" -r ./requirements.txt
+
+# Copy Sources
+COPY src src
+COPY pyproject.toml .
+COPY uv.lock .
+COPY README.md .
+
+# Build Wheels for Distro's (own) Package
+RUN uv build --wheel --out-dir "/tmp/build-wheels" && \
+    mkdir -p "${DISTRO_WHEELS}" && \
+    find /tmp/build-wheels -name "*.whl" -exec mv {} "${DISTRO_WHEELS}" \;
+
+# Install wheels for our Distro and its Install/Runtime Dependencies
+# in user site-packages (ie /root/.local/lib/python3.11/site-packages)
+RUN pip install --no-deps --no-cache-dir --user "${DISTRO_WHEELS}"/*.whl
+
+# Add user's bin folder, to PATH to make biskotakigold CLI available
+ENV PATH="/root/.local/bin:$PATH"
 
 
 
