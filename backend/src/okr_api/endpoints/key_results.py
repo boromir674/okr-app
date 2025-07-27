@@ -11,6 +11,7 @@ router = APIRouter()
 class KeyResultCreate(BaseModel):
     """Encapsulates data for creating a Key Result."""
     objective_id: int
+    short_description: t.Optional[str] = None
     description: str
     progress: float = 0.0
     metric: t.Optional[str] = None
@@ -19,6 +20,7 @@ class KeyResultCreate(BaseModel):
 class KeyResultUpdate(BaseModel):
     """Encapsulates data for updating a Key Result."""
     progress: t.Optional[float] = None
+    short_description: t.Optional[str] = None   
     description: t.Optional[str] = None
     metric: t.Optional[str] = None
     unit: t.Optional[int] = None
@@ -31,6 +33,7 @@ async def create_key_result(
     """Create a new key result."""
     new_key_result = KeyResult(
         objective_id=key_result.objective_id,
+        short_description=key_result.short_description,
         description=key_result.description,
         progress=key_result.progress,
         metric=key_result.metric,
@@ -42,6 +45,7 @@ async def create_key_result(
     return {
         "id": new_key_result.id,
         "objective_id": new_key_result.objective_id,
+        "short_description": new_key_result.short_description,
         "description": new_key_result.description,
         "progress": new_key_result.progress,
         "metric": new_key_result.metric,
@@ -56,6 +60,7 @@ async def read_key_results(db: Session = Depends(get_db_session)) -> t.List[t.Di
         {
             "id": kr.id,
             "objective_id": kr.objective_id,
+            "short_description": kr.short_description,
             "description": kr.description,
             "progress": kr.progress,
             "metric": kr.metric,
@@ -75,6 +80,7 @@ async def read_key_result(
     return {
         "id": key_result.id,
         "objective_id": key_result.objective_id,
+        "short_description": key_result.short_description,
         "description": key_result.description,
         "progress": key_result.progress,
         "metric": key_result.metric,
@@ -96,12 +102,17 @@ async def update_key_result(
         existing_key_result.description = key_result.description
     if key_result.metric is not None:
         existing_key_result.metric = key_result.metric
+    if key_result.short_description is not None:
+        existing_key_result.short_description = key_result.short_description
+    if key_result.unit is not None:
+        existing_key_result.unit = key_result.unit
 
     db.commit()
     db.refresh(existing_key_result)
     return {
         "id": existing_key_result.id,
         "objective_id": existing_key_result.objective_id,
+        "short_description": existing_key_result.short_description,
         "description": existing_key_result.description,
         "progress": existing_key_result.progress,
         "metric": existing_key_result.metric,

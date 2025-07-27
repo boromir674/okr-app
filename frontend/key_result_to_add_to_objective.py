@@ -72,6 +72,7 @@ class KeyResultItemSelectedForObjectiveUnderConstruction:
         c1, c2 = self.st.columns([2, 3])
         # RENDER the Key Result Item text Description (no title exists in data model)
         with c1:
+            self.st.write(self.key_result['short_description'])
             self.st.write(self.key_result['description'])
         with c2:
 

@@ -104,10 +104,13 @@ class KeyResultItem:
 
         # value to use for next render
         progress_bar_value = self.st.session_state[f'progress_value_{self._id}']
-        unit_value = self.st.session_state[f'unit_value_{self._id}']
+        # unit_value = self.st.session_state[f'unit_value_{self._id}']
 
         # RENDER the Key Result Item text Description (no title exists in data model)
-        self.st.write(self.key_result['description'])
+        expander_label: str = self.key_result.get('short_description', 'Description')
+
+        with self.st.expander(expander_label, expanded=False):
+            self.st.write(self.key_result['description'])
 
         ## EDIT MODE
         if self.st.session_state[f'edit_{self._id}']:

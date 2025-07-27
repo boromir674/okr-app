@@ -133,7 +133,7 @@ class KeyResultItemV2:
         # Check if the congratulatory message should be cleared based on timestamp
         if f'congratulations_timestamp_{self._id}' in self.st.session_state:
             current_time = time.time()
-            if current_time - self.st.session_state[f'congratulations_timestamp_{self._id}'] > 2:  # 2 seconds duration
+            if current_time - self.st.session_state[f'congratulations_timestamp_{self._id}'] > 4:  # 2 seconds duration
                 self.st.session_state.pop(f'congratulations_{self._id}', None)
                 self.st.session_state.pop(f'congratulations_timestamp_{self._id}', None)
 
@@ -147,7 +147,7 @@ class KeyResultItemV2:
                 self._set_progress_state(new_progress)
 
                 # Show congratulatory message and store timestamp
-                self.st.session_state[f'congratulations_{self._id}'] = f"Bravo! Progress updated to {new_progress}% 🎉"
+                self.st.session_state[f'congratulations_{self._id}'] = f"Bravo re malaka!!! Progress updated to {new_progress}% 🎉"
                 self.st.session_state[f'congratulations_timestamp_{self._id}'] = time.time()
                 self.st.toast(self.st.session_state[f'congratulations_{self._id}'], icon="✅")
 

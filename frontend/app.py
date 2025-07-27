@@ -30,15 +30,23 @@ def main():
 
 from key_results_card import KeyResultsCard
 
+response = None
+
+def start_up_query():
+    """Initial query to fetch objectives."""
+    # Fetch the first 4 objectives to display in the dashboard
+    global response
+    if not response:
+        # Make a GET request to fetch objectives
+        response = requests.get(f"{BASE_URL}/objectives/")
+    return response
 
 # OKR Dashboard
 def dashboard_ui():
     """Render the Dashboard UI."""
     # RENDER
     st.header("Dashboard: Recent Objectives")
-
-    response = requests.get(f"{BASE_URL}/objectives/")
-
+    response = start_up_query()
     if response.status_code == 200:
         objectives = response.json()
         # Display top 4 objectives in a grid layout
@@ -51,8 +59,9 @@ def dashboard_ui():
                 with cols[i]:
                     # RENDER Objective Name
                     st.subheader(obj["name"])
-                    # RENDER Objective Description
-                    st.write(obj["description"])
+                    # RENDER Objective Description as expander
+                    with st.expander("Description"):
+                        st.write(obj["description"])
                     # RENDER expander, which pushes elemnt below in grid when opened !
                     with st.expander("Key Results"):
 
@@ -89,13 +98,44 @@ def objectives_ui():
     # Nested Key Result Creation/Attachment
     st.markdown("##### Key Results")
 
-    # STATE management
+    # Server Data Fetching
+    response = start_up_query()
+    if response.status_code == 200:
+        objectives = response.json()
+
+    ### STATE management ###
+    # the list of KRs is always empty at first, in the Create New Objective flow 
     if "key_results_for_objective" not in st.session_state:
         st.session_state["key_results_for_objective"] = []
 
-    from key_result_to_add_to_objective import KeyResultItemSelectedForObjectiveUnderConstruction as KRI
+    # Initialize session state from Server Data, for each Key Result under each Objective
+    from objectives_state import ObjectivesState
+    state = ObjectivesState(objectives=objectives)
+    flat_state_iterator = iter(state.iter_state())
+    for objective in objectives:
+        # add Objective 'name'
+        key, value = next(flat_state_iterator)
+        if key not in st.session_state:
+            st.session_state[key] = value
 
-    # RENDER KR items from session state data
+        # add Objective 'description'
+        key, value = next(flat_state_iterator)
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+        for kr in objective.get("key_results", []):
+            # KR Short Description
+            key, value = next(flat_state_iterator)
+            if key not in st.session_state:
+                st.session_state[key] = value
+            # KR Description
+            key, value = next(flat_state_iterator)
+            if key not in st.session_state:
+                st.session_state[key] = value
+    ### STATE end ###
+
+    # RENDER newyly added KR items for 'Create new Objective' flow, from session state data
+    from key_result_to_add_to_objective import KeyResultItemSelectedForObjectiveUnderConstruction as KRI
     c = st.container()
     with c:
         for i, kr in enumerate(st.session_state["key_results_for_objective"]):
@@ -106,7 +146,7 @@ def objectives_ui():
             with col2:
                 if st.button("Remove", key=f"remove_{kr['id']}"):
                     st.session_state["key_results_for_objective"].remove(kr)
-                    st.success(f"Key Result '{kr['description']}' removed from Objective!")
+                    st.success(f"Key Result '{kr['short_description']}' removed from Objective!")
                     st.rerun()
 
         # RENDER ADD KEY RESULT button which opens Popover
@@ -122,6 +162,7 @@ def objectives_ui():
                 if st.button("Add", key="add_new_key_result"):
                     new_kr = {
                         "id": uuid.uuid4().hex,
+                        "short_description": elements[4],
                         "description": elements[0],
                         "progress": elements[1],
                         "metric": elements[2],
@@ -149,6 +190,7 @@ def objectives_ui():
             for kr in st.session_state["key_results_for_objective"]:
                 kr_payload = {
                     "objective_id": new_objective["id"],
+                    "short_description": kr["short_description"],
                     "description": kr["description"],
                     "progress": kr["progress"],
                     "metric": kr["metric"],
@@ -158,9 +200,9 @@ def objectives_ui():
                                             headers={"Content-Type": "application/json"},
                                             data=json.dumps(kr_payload))
                 if kr_response.status_code == 200:
-                    st.success(f"Key Result '{kr['description']}' added successfully!")
+                    st.success(f"Key Result '{kr['short_description']}' added successfully!")
                 else:
-                    st.error(f"Failed to add Key Result '{kr['description']}': {kr_response.status_code} - {kr_response.text}")
+                    st.error(f"Failed to add Key Result '{kr['short_description']}': {kr_response.status_code} - {kr_response.text}")
 
             st.session_state["key_results_for_objective"] = []
             st.rerun()
@@ -170,13 +212,13 @@ def objectives_ui():
     # RENDER Catalog of Objectives
     st.subheader("Catalog of Objectives")
 
-    # Fetch objectives
-    objectives_response = requests.get(f"{BASE_URL}/objectives/")
-    if objectives_response.status_code == 200:
-        objectives = objectives_response.json()
-    else:
-        st.error(f"Failed to fetch objectives: {objectives_response.status_code} - {objectives_response.text}")
-        return
+    # # Fetch objectives
+    # objectives_response = requests.get(f"{BASE_URL}/objectives/")
+    # if objectives_response.status_code == 200:
+    #     objectives = objectives_response.json()
+    # else:
+    #     st.error(f"Failed to fetch objectives: {objectives_response.status_code} - {objectives_response.text}")
+    #     return
 
     # Fetch key results for mapping
     key_results_response = requests.get(f"{BASE_URL}/key_results/")
@@ -212,29 +254,72 @@ def objectives_ui():
     </style>
     """, unsafe_allow_html=True)
 
-    # Render objectives in a catalog-style layout
-    for obj in objectives:
-        key_results_html = ""
-        if obj["id"] in key_results_map:
-            key_results_html = "".join(
-                f"<li>{kr['description']} - Progress: {kr['progress']}%</li>"
-                for kr in key_results_map[obj["id"]]
-            )
-        else:
-            key_results_html = "<li>No Key Results available.</li>"
+    # Iteratively Render objectives from state data, in a catalog-style layout
+    for objective_id, objective_dict in state:
+        
+        obj_name = objective_dict.get("name", "")
+        description = objective_dict.get("description", "")
 
-        objective_html = f"""
-        <div class="objective-item">
-            <h4>{obj['name']}</h4>
-            <p><strong>Description:</strong> {obj['description']}</p>
-            <p><strong>Progress:</strong> {obj['progress']}%</p>
-            <p><strong>Key Results:</strong></p>
-            <ul>
-                {key_results_html}
-            </ul>
-        </div>
-        """
-        st.markdown(objective_html, unsafe_allow_html=True)
+        # Render Editable Objective Name
+        obj_name = st.text_input(
+            f"Objective Name (ID: {objective_id})",
+            value=obj_name,
+
+            on_change=state.set_objective_name_state_adapted,
+            args=(lambda: st.session_state.get(f"edit_obj_name_{objective_id}", obj_name),),
+
+            key=f"edit_obj_name_{objective_id}"
+        )
+
+        # Render Editable Objective Description
+        obj_description = st.text_area(
+            f"Objective Description (ID: {objective_id})",
+            value=description,
+
+            on_change=state.set_objective_description_state_adapted,
+            args=(lambda: st.session_state.get(f"edit_obj_description_{objective_id}", description),),
+
+            key=f"edit_obj_description_{objective_id}"
+        )
+
+        # Render Save Button for changes to Objective
+        if st.button(f"Save Objective Changes (ID: {objective_id})", key=f"save_obj_changes_{objective_id}"):
+            payload = {"name": obj_name, "description": obj_description}
+            response = requests.put(f"{BASE_URL}/objectives/{objective_id}", 
+                                    headers={"Content-Type": "application/json"},
+                                    data=json.dumps(payload))
+            if response.status_code == 200:
+                st.success(f"Objective '{obj_name}' updated successfully!")
+                # st.rerun()
+            else:
+                st.error(f"Failed to update objective: {response.status_code} - {response.text}")
+
+        # Iteratively Render Key Results for the Objective
+        if objective_id in key_results_map:  # uses a new server data request (can be avoided if all app uses the same state keys for nesting obj and krs)
+            for kr in key_results_map[objective_id]:
+                # Editable fields for Key Result
+                kr_short_description = st.text_input(f"Key Result Title (ID: {kr['id']})", value=kr.get('short_description', ''), key=f"edit_kr_title_{kr['id']}")
+                kr_description = st.text_area(f"Key Result Description (ID: {kr['id']})", value=kr['description'], key=f"edit_kr_description_{kr['id']}")
+
+                # Save changes to Key Result
+                if st.button(f"Save Key Result Changes (ID: {kr['id']})", key=f"save_kr_changes_{kr['id']}"):
+                    kr_payload = {
+                        "short_description": kr_short_description,
+                        "description": kr_description,
+                    }
+                    kr_response = requests.put(f"{BASE_URL}/key_results/{kr['id']}",
+                                               headers={"Content-Type": "application/json"},
+                                               data=json.dumps(kr_payload))
+                    if kr_response.status_code == 200:
+                        st.success(f"Key Result '{kr_short_description}' updated successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to update Key Result: {kr_response.status_code} - {kr_response.text}")
+        else:
+            st.write("No Key Results available for this Objective.")
+
+        # Add visual separation between Objectives
+        st.markdown("---")
 
     # Delete Objective
     st.subheader("Delete Objective")
@@ -265,6 +350,7 @@ def key_results_ui():
     st.subheader("Create Key Result")
     objective_id = st.number_input("Objective ID", min_value=1, step=1)
     description = st.text_area("Description")
+    short_description = st.text_input("Title / Short Description")
     progress = st.slider("Progress", min_value=0, max_value=100, step=1)
     metric = st.text_input("Metric (Optional)")
     unit = st.number_input("Unit (Optional)", min_value=1, max_value=99, step=1, value=1)  # Add unit input
@@ -272,6 +358,7 @@ def key_results_ui():
         payload = {
             "objective_id": objective_id,
             "description": description,
+            "short_description": short_description,
             "progress": progress,
             "metric": metric,
             "unit": unit,  # Persist unit value
@@ -330,6 +417,7 @@ def key_results_ui():
             objective_name = objectives_map.get(kr["objective_id"], "Unknown Objective")
             st.markdown(f"""
             <div class="key-result-item">
+                <h3>{kr.get('short_description')}</h3>
                 <h4>{kr['description']}</h4>
                 <p><strong>Progress:</strong> {kr['progress']}%</p>
                 <p><strong>Objective:</strong> {objective_name}</p>

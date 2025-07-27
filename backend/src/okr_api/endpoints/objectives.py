@@ -17,6 +17,16 @@ class ObjectiveCreate(BaseModel):
     name: str
     description: str
 
+class ObjectiveUpdate(BaseModel):
+    """Encapsulates data for updating an Objective.
+
+    Args:
+        name (Optional[str]): Updated name of the objective.
+        description (Optional[str]): Updated description of the objective.
+    """
+    name: t.Optional[str] = None
+    description: t.Optional[str] = None
+
 @router.post("/objectives")
 async def create_objective(
     objective: ObjectiveCreate, db: Session = Depends(get_db_session)
@@ -62,6 +72,29 @@ async def read_objective(
         "name": objective.name,
         "description": objective.description,
         "progress": objective.progress,
+    }
+
+@router.put("/objectives/{objective_id}")
+async def update_objective(
+    objective_id: int, objective: ObjectiveUpdate, db: Session = Depends(get_db_session)
+) -> t.Dict[str, t.Any]:
+    """Update an objective by ID."""
+    existing_objective = db.query(Objective).filter(Objective.id == objective_id).first()
+    if not existing_objective:
+        raise HTTPException(status_code=404, detail="Objective not found")
+
+    if objective.name is not None:
+        existing_objective.name = objective.name
+    if objective.description is not None:
+        existing_objective.description = objective.description
+
+    db.commit()
+    db.refresh(existing_objective)
+    return {
+        "id": existing_objective.id,
+        "name": existing_objective.name,
+        "description": existing_objective.description,
+        "progress": existing_objective.progress,
     }
 
 @router.delete("/objectives/{objective_id}")

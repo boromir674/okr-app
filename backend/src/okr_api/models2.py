@@ -24,6 +24,8 @@ class KeyResult(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     objective_id = Column(Integer, ForeignKey('objectives.id', ondelete='CASCADE'), nullable=False)
     description = Column(Text, nullable=False)
+    # title-like short description
+    short_description = Column(String(255), nullable=True)
     progress = Column(Integer, nullable=True, server_default="0")
     metric = Column(String(255), nullable=True)
     unit = Column(Integer, nullable=True, server_default="1")

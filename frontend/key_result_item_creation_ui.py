@@ -50,7 +50,16 @@ class KeyResultItemEditUI:
             self.st.session_state[f'progress_value_{self._id}'] = self.key_result.get("progress", 0)
         ## END STATE ##
 
-        # RENDER UI, accepting input in different forms
+        ## RENDER UI, accepting input in different forms ##
+        
+        # RENDER Description Text Input
+        kr_short_description = self.st.text_input(
+            "Key Result Short Description",
+            value=self.key_result.get("short_description", ''),
+            key=f"new_kr_short_description_{self._id}"
+        )
+
+        # RENDER Description Text Input Area
         kr_description = self.st.text_area("Key Result Description", value='', key=f"new_kr_description_{self._id}")
         kr_progress = self.st.slider(
             "Progress", min_value=0, max_value=100, step=self.STEP, value=self._get_progress_state(), key=f"new_kr_progress_{self._id}",
@@ -76,4 +85,4 @@ class KeyResultItemEditUI:
             key=f"new_kr_unit_input_{self._id}",
         )
 
-        return [kr_description, kr_progress, kr_metric, kr_unit]
+        return [kr_description, kr_progress, kr_metric, kr_unit, kr_short_description]

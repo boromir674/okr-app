@@ -70,6 +70,7 @@ services:
       - ./frontend/key_result_item_v2.py:/app/key_result_item_v2.py
       - ./frontend/key_result_to_add_to_objective.py:/app/key_result_to_add_to_objective.py
       - ./frontend/key_result_item_creation_ui.py:/app/key_result_item_creation_ui.py
+      - ./frontend/objectives_state.py:/app/objectives_state.py
 
       - ./frontend/knowledge_base.py:/app/knowledge_base.py
 
