@@ -7,12 +7,14 @@ import typing as t
 
 router = APIRouter()
 
+
 class KeyResultCreate(BaseModel):
     """Encapsulates data for creating a Key Result."""
     objective_id: int
     description: str
     progress: float = 0.0
     metric: t.Optional[str] = None
+    unit: t.Optional[int] = 1
 
 class KeyResultUpdate(BaseModel):
     """Encapsulates data for updating a Key Result."""
@@ -20,6 +22,7 @@ class KeyResultUpdate(BaseModel):
     description: t.Optional[str] = None
     metric: t.Optional[str] = None
     unit: t.Optional[int] = None
+
 
 @router.post("/key_results")
 async def create_key_result(
@@ -31,6 +34,7 @@ async def create_key_result(
         description=key_result.description,
         progress=key_result.progress,
         metric=key_result.metric,
+        unit=key_result.unit,
     )
     db.add(new_key_result)
     db.commit()
@@ -41,6 +45,7 @@ async def create_key_result(
         "description": new_key_result.description,
         "progress": new_key_result.progress,
         "metric": new_key_result.metric,
+        "unit": new_key_result.unit,
     }
 
 @router.get("/key_results/")
@@ -54,6 +59,7 @@ async def read_key_results(db: Session = Depends(get_db_session)) -> t.List[t.Di
             "description": kr.description,
             "progress": kr.progress,
             "metric": kr.metric,
+            "unit": kr.unit,
         }
         for kr in sorted(key_results, key=lambda x: x.objective_id)
     ]
@@ -72,6 +78,7 @@ async def read_key_result(
         "description": key_result.description,
         "progress": key_result.progress,
         "metric": key_result.metric,
+        "unit": key_result.unit,
     }
 
 @router.put("/key_results/{key_result_id}")
@@ -98,6 +105,7 @@ async def update_key_result(
         "description": existing_key_result.description,
         "progress": existing_key_result.progress,
         "metric": existing_key_result.metric,
+        "unit": existing_key_result.unit,
     }
 
 @router.delete("/key_results/{key_result_id}")
