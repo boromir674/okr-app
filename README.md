@@ -144,12 +144,18 @@ docker exec -it ${OKR_DB_CONTAINER} psql -U postgres -d okr_db -c "
 "
 ```
 
-#### View Columns and their types of 'objectives' table
+#### View Columns and their types
 
 ```sh
 docker exec -it ${OKR_DB_CONTAINER} psql -U postgres -d okr_db -c "
     SELECT column_name, data_type
     FROM information_schema.columns
     WHERE table_name = 'objectives';
+"
+
+docker exec -it ${OKR_DB_CONTAINER} psql -U postgres -d okr_db -c "
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'key_results';
 "
 ```
