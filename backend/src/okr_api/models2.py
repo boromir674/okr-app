@@ -26,3 +26,4 @@ class KeyResult(Base):
     description = Column(Text, nullable=False)
     progress = Column(Integer, nullable=True, server_default="0")
     metric = Column(String(255), nullable=True)
+    unit = Column(Integer, nullable=True, server_default="1")

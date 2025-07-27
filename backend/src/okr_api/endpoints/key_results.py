@@ -19,6 +19,7 @@ class KeyResultUpdate(BaseModel):
     progress: t.Optional[float] = None
     description: t.Optional[str] = None
     metric: t.Optional[str] = None
+    unit: t.Optional[int] = None
 
 @router.post("/key_results")
 async def create_key_result(
