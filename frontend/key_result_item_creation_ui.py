@@ -33,6 +33,14 @@ class KeyResultItemEditUI:
     def _set_progress_state_adapted(self, value_getter: t.Callable[[], bool]):
         self._set_progress_state(value_getter())
 
+    # KR Unit value state
+    def set_unit_state(self, value: int):
+        """Set the unit value in session state."""
+        self.st.session_state[f'unit_value_{self._id}'] = value
+
+    def _set_unit_state_adapted(self, value_getter: t.Callable[[], float]):
+        """Set the unit value in session state using a value getter."""
+        self.set_unit_state(value_getter())
 
     def render(self):
         """Render the Key Result creation UI."""
@@ -53,4 +61,19 @@ class KeyResultItemEditUI:
         )
         kr_metric = self.st.text_input("Metric (Optional)", key=f"new_kr_metric_{self._id}")
 
-        return [kr_description, kr_progress, kr_metric]
+        # Render unit input field
+        # value to use for next render, use state value since this takes into account units value set in ui (regardless of whether it was persisted (yet))
+        units_value_to_render = self.st.session_state.get(f'unit_value_{self._id}', self.key_result.get("unit", 1))
+        kr_unit = self.st.number_input(
+            "Unit (Optional):",
+            min_value=1,
+            max_value=99,
+            value=units_value_to_render,
+            step=1,
+            on_change=self._set_unit_state_adapted,
+            args=(lambda: self.st.session_state.get(f"new_kr_unit_input_{self._id}", self.key_result.get("unit", 1)),),
+
+            key=f"new_kr_unit_input_{self._id}",
+        )
+
+        return [kr_description, kr_progress, kr_metric, kr_unit]

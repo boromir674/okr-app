@@ -81,6 +81,8 @@ def objectives_ui():
 
     # RENDER: Create Objective Section
     st.subheader("Create Objective")
+    
+    # CREATE UI for Objective
     title = st.text_input("Title")
     description = st.text_area("Description")
 
@@ -107,7 +109,7 @@ def objectives_ui():
                     st.success(f"Key Result '{kr['description']}' removed from Objective!")
                     st.rerun()
 
-        # Popover for adding Key Results
+        # RENDER ADD KEY RESULT button which opens Popover
         with st.popover("Add Key Result"):
             from key_result_item_creation_ui import KeyResultItemEditUI as KRI_UI
             key_result_crud_ui = KRI_UI(st)
@@ -123,6 +125,7 @@ def objectives_ui():
                         "description": elements[0],
                         "progress": elements[1],
                         "metric": elements[2],
+                        "unit": elements[3],  # Include unit value
                     }
                     st.session_state["key_results_for_objective"].append(new_kr)
                     st.success("New Key Result added to Objective!")
@@ -149,6 +152,7 @@ def objectives_ui():
                     "description": kr["description"],
                     "progress": kr["progress"],
                     "metric": kr["metric"],
+                    "unit": kr["unit"],  # Persist unit value
                 }
                 kr_response = requests.post(f"{BASE_URL}/key_results",
                                             headers={"Content-Type": "application/json"},
@@ -263,11 +267,20 @@ def key_results_ui():
     description = st.text_area("Description")
     progress = st.slider("Progress", min_value=0, max_value=100, step=1)
     metric = st.text_input("Metric (Optional)")
+    unit = st.number_input("Unit (Optional)", min_value=1, max_value=99, step=1, value=1)  # Add unit input
     if st.button("Create Key Result"):
-        payload = {"objective_id": objective_id, "description": description, "progress": progress, "metric": metric}
-        response = requests.post(f"{BASE_URL}/key_results",
-                                 headers={"Content-Type": "application/json"},
-                                 data=json.dumps(payload))
+        payload = {
+            "objective_id": objective_id,
+            "description": description,
+            "progress": progress,
+            "metric": metric,
+            "unit": unit,  # Persist unit value
+        }
+        response = requests.post(
+            f"{BASE_URL}/key_results",
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(payload),
+        )
         if response.status_code == 200:
             st.success("Key Result created successfully!")
         else:

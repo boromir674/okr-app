@@ -19,6 +19,7 @@ BASE_URL = os.environ['OKR_BACKEND_URL']
 
 class KRUpdateDate(t.TypedDict):
     progress: float
+    unit: int
     kr_id: int
 
 
@@ -79,6 +80,10 @@ class KeyResultItem:
         """Get the progress value from session state."""
         return self.st.session_state.get(f'progress_value_{kr_id}', value)
 
+    def _get_unit_state(self):
+        """Get the unit value from session state."""
+        return self.st.session_state[f'unit_value_{self._id}']
+
     def render(self):
         """
         Render the single key result item.
@@ -86,6 +91,10 @@ class KeyResultItem:
         ## STATE management ##
         if not f'progress_value_{self._id}' in self.st.session_state:
             self.st.session_state[f'progress_value_{self._id}'] = self.key_result["progress"]
+
+        if not f'unit_value_{self._id}' in self.st.session_state:
+            # first value in state should be the latest data from db
+            self.st.session_state[f'unit_value_{self._id}'] = self.key_result.get("unit", 1)
 
         if not f'edit_{self._id}' in self.st.session_state:  # at first we are in View Mode
             self.st.session_state[f'edit_{self._id}'] = False
@@ -95,6 +104,7 @@ class KeyResultItem:
 
         # value to use for next render
         progress_bar_value = self.st.session_state[f'progress_value_{self._id}']
+        unit_value = self.st.session_state[f'unit_value_{self._id}']
 
         # RENDER the Key Result Item text Description (no title exists in data model)
         self.st.write(self.key_result['description'])
@@ -106,11 +116,12 @@ class KeyResultItem:
 
             put_key_results = create_put_key_results_callback({
                 'progress': self._get_progress_state(self._id, progress_bar_value),  # use value from session state, where potentially user changes (through interactive UI) come
+                'unit': self._get_unit_state(),  # update db data from ui state data
                 'kr_id': self.key_result['id']
             })
 
             # RENDER SAVE BUTTON
-            if self.st.button(f"Save Progress", key=f"update_{self.key_result['id']}"):
+            if self.st.button(f"Save", key=f"update_{self.key_result['id']}"):
                 update_response = put_key_results()
                 if update_response.status_code == 200:
                     self.st.success("Progress updated successfully!")

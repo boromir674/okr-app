@@ -31,6 +31,11 @@ class KeyResultItemV2:
         """Get the progress value from session state."""
         return self.st.session_state[f'progress_value_{self._id}']
 
+    def _get_unit_state(self):
+        """Get the unit value from session state."""
+        return self.st.session_state[f'unit_value_{self._id}']
+
+
     def render(self):
         """
         Render the single key result item.
@@ -103,12 +108,16 @@ class KeyResultItemV2:
 
         # RENDER 3-column grid with '-', progress, '+' design
         col1, col2, col3 = self.st.columns([1, 4, 1])
+
+        # Fetch unit value from session state
+        unit = self._get_unit_state()
+
         with col1:  # button with text '-'
             ''
             ''
             ''
             if self.st.button("\-", key=f"minus_{self._id}", disabled=self._get_progress_state() <= 0):
-                self._set_progress_state(self._get_progress_state() - self.STEP)
+                self._set_progress_state(max(self._get_progress_state() - unit, 0))
                 self.st.rerun()
         with col2:
             # Render progress bar using custom HTML
@@ -134,7 +143,7 @@ class KeyResultItemV2:
             ''
             if self.st.button("\+", key=f"plus_{self._id}", disabled=self._get_progress_state() >= 100):
                 # Update progress state
-                new_progress = self._get_progress_state() + self.STEP
+                new_progress = min(self._get_progress_state() + unit, 100)
                 self._set_progress_state(new_progress)
 
                 # Show congratulatory message and store timestamp
@@ -150,15 +159,7 @@ class KeyResultItemV2:
         ## Dynamic Emoticon Rendering ##
         progress = self._get_progress_state()
 
-        # Define reward pools
-        milestone_rewards = {
-            50: "🌟 Keep going! You're halfway there!",
-            70: "💪 Great job! You've hit a stretch goal!",
-            100: "🏆 Amazing! You've achieved your objective!"
-        }
-        experimental_rewards = ["🎈", "🎁", "✨", "🔥", "🌟", "🥳", "🎉", "🎊"]
-
-        manly_rewards = [
+        rewards = [
             "The journey begins, brave soul!",  # 0%
             "One step closer to greatness!",  # 1%
             "The spark of ambition ignites!",  # 2%
@@ -252,9 +253,9 @@ class KeyResultItemV2:
         ]
 
         # Render rewards based on progress
-        reward_index = min(int(progress), len(manly_rewards) - 1)
+        reward_index = min(int(progress), len(rewards) - 1)
         self.st.markdown(f"""
         <div style="text-align: center; font-size: 24px;">
-            {manly_rewards[reward_index]}
+            {rewards[reward_index]}
         </div>
         """, unsafe_allow_html=True)

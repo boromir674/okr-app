@@ -30,10 +30,22 @@ class KeyResultItemEdit:
         """Set the progress value in session state using a value getter."""
         self.set_progress_state(kr_id, value_getter())
 
+    def set_unit_state(self, value: int):
+        """Set the unit value in session state."""
+        self.st.session_state[f'unit_value_{self._id}'] = value
+
+    def _set_unit_state_adapted(self, value_getter: t.Callable[[], float]):
+        """Set the unit value in session state using a value getter."""
+        self.set_unit_state(value_getter())
+
     def render(self):
         """
         Render the sinlge key result item in Edit Mode.
         """
+        # Initialize unit in session state if not already set
+        if f'unit_{self._id}' not in self.st.session_state:
+            self.st.session_state[f'unit_{self._id}'] = self.key_result.get("unit", 1)
+
         # value to use for next render, use state value since this takes into account slider movement (regardless of whether it was persisted (yet))
         progress_bar_value = self.st.session_state.get(f'progress_value_{self._id}', self.key_result["progress"])
 
@@ -55,6 +67,22 @@ class KeyResultItemEdit:
 
                 key=f"progress_slider_{self._id}",
             )
+
+            # Render unit input field
+            # value to use for next render, use state value since this takes into account units value set in ui (regardless of whether it was persisted (yet))
+            units_value_to_redner = self.st.session_state.get(f'unit_value_{self._id}', self.key_result.get("unit", 1))
+            unit = self.st.number_input(
+                "Unit (Optional):",
+                min_value=1,
+                max_value=99,
+                value=units_value_to_redner,
+                step=1,
+                on_change=self._set_unit_state_adapted,
+                args=(lambda: self.st.session_state.get(f"unit_input_{self._id}", self.key_result.get("unit", 1)),),
+
+                key=f"unit_input_{self._id}",
+            )
+
         with col1:  # button with text '-'
             ''  # add empty components as a "hack" to "push" this element to the bottom
             ''
@@ -72,4 +100,4 @@ class KeyResultItemEdit:
                 self.set_progress_state(self.key_result['id'], progress + KeyResultItemEdit.STEP)
                 # this not react: manually call re-run script to re-render given updated state
                 self.st.rerun()
-        return [progress]
+        return [progress, unit]
