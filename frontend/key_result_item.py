@@ -6,7 +6,7 @@ import json
 import os
 
 # Designed to render data
-from key_result_item_view import KeyResultItemView
+# from key_result_item_view import KeyResultItemView
 from key_result_item_v2 import KeyResultItemV2 as KeyResultItemView
 
 # Designed as to accept User input (ie input, sliders, forms)
@@ -122,7 +122,8 @@ class KeyResultItem:
                     # key_result_item = KeyResultItemEdit(self.st, self.key_result)
                     # key_result_item.render()
                     
-                    # manually call re-run script, because state changed
+                    # this is steamlit, re-render is auto-triggered on user interaction, not on state change as react!
+                    # manually call re-run (renderer) script, because state changed
                     self.st.rerun()
                 else:
                     self.st.error(f"Failed to update progress: {update_response.status_code}")

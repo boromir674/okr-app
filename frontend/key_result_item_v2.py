@@ -96,6 +96,11 @@ class KeyResultItemV2:
             </style>
             """, unsafe_allow_html=True)
 
+        ## RENDER POP-UP - retention hack ##
+        # Show congratulatory message if in state
+        if f'congratulations_{self._id}' in self.st.session_state:
+            self.st.toast(self.st.session_state[f'congratulations_{self._id}'], icon="✅")
+
         # RENDER 3-column grid with '-', progress, '+' design
         col1, col2, col3 = self.st.columns([1, 4, 1])
         with col1:  # button with text '-'
@@ -115,25 +120,32 @@ class KeyResultItemV2:
         if self.st.session_state[f'should_animate_{self._id}'] == True:
             self.st.session_state[f'should_animate_{self._id}'] = False
             st.rerun()
+
+        # Check if the congratulatory message should be cleared based on timestamp
+        if f'congratulations_timestamp_{self._id}' in self.st.session_state:
+            current_time = time.time()
+            if current_time - self.st.session_state[f'congratulations_timestamp_{self._id}'] > 2:  # 2 seconds duration
+                self.st.session_state.pop(f'congratulations_{self._id}', None)
+                self.st.session_state.pop(f'congratulations_timestamp_{self._id}', None)
+
         with col3:
             ''
             ''
             ''
             if self.st.button("\+", key=f"plus_{self._id}", disabled=self._get_progress_state() >= 100):
-                
-                # Render a Toast notification !! to Celebrate the progress !!!!
-                # st.toast(body, *, icon=None))
-                self.st.toast(f"Bravo re malaka 🎉 ({self._get_progress_state()}%) 🎉", icon="✅")
-                time.sleep(4)
-                # Simulate a delay for the animation effect
-                
-                # Update State variables
-                self._set_progress_state(self._get_progress_state() + self.STEP)
-                self.st.session_state[f'should_animate_{self._id}'] = True
-                # Re-render instruction
-                self.st.rerun()
-                assert 1 == 0  # never runs 
+                # Update progress state
+                new_progress = self._get_progress_state() + self.STEP
+                self._set_progress_state(new_progress)
 
+                # Show congratulatory message and store timestamp
+                self.st.session_state[f'congratulations_{self._id}'] = f"Bravo! Progress updated to {new_progress}% 🎉"
+                self.st.session_state[f'congratulations_timestamp_{self._id}'] = time.time()
+                self.st.toast(self.st.session_state[f'congratulations_{self._id}'], icon="✅")
+
+                # Trigger re-render for animation
+                self.st.session_state[f'should_animate_{self._id}'] = True
+                self.st.rerun()
+                assert 1 == 0  # this never runs, but is here to illustrate that the re-rendering is necessary to show the updated state
 
         # RENDER celebration 🎉 emoticons based on progress percentage (10th percentile rounded-up for integer!)
         celebration_count = int((self._get_progress_state() + 9) // 10)
