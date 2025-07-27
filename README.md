@@ -108,7 +108,7 @@ docker run -it --rm --network okr_network_dev -e OKR_BACKEND_URL -v ./frontend/a
 export OKR_APP_DEPLOY_MODE='staging'
 # OR
 export OKR_APP_DEPLOY_MODE='prod'
-export OKR_DB_CONTAINER="okr_db_{OKR_APP_DEPLOY_MODE:-staging}"
+export OKR_DB_CONTAINER="okr_db_${OKR_APP_DEPLOY_MODE:-staging}"
 ```
 
 ---
@@ -124,8 +124,9 @@ SELECT
     o.name AS objective_name, 
     o.progress AS objective_progress, 
     kr.id AS key_result_id, 
-    kr.description AS key_result_description, 
-    kr.progress AS key_result_progress 
+    kr.description AS key_result_description,
+    kr.progress AS key_result_progress,
+    kr.unit AS key_result_unit
 FROM objectives o 
 LEFT JOIN key_results kr ON o.id = kr.objective_id 
 ORDER BY o.id, kr.id;
