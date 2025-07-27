@@ -147,6 +147,38 @@ class KeyResultItemV2:
                 self.st.rerun()
                 assert 1 == 0  # this never runs, but is here to illustrate that the re-rendering is necessary to show the updated state
 
-        # RENDER celebration 🎉 emoticons based on progress percentage (10th percentile rounded-up for integer!)
-        celebration_count = int((self._get_progress_state() + 9) // 10)
-        self.st.write("🎉" * celebration_count)
+        ## Dynamic Emoticon Rendering ##
+        progress = self._get_progress_state()
+
+        # Define a pool of random emojis for rewards
+        emoji_pool = ["🎉", "🎊", "💪", "🔥", "🌟", "🏆", "✨", "🎈", "🥳"]
+
+        if progress >= 100:
+            # Render a celebratory animation for 100% progress
+            self.st.markdown("""
+            <div style="text-align: center; font-size: 48px; animation: bounce 1s infinite;">
+                🎉🎊💯
+            </div>
+            <style>
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+            </style>
+            """, unsafe_allow_html=True)
+        elif progress >= 80:
+            # Render a "muscle" emoji for high progress
+            self.st.markdown(f"""
+            <div style="text-align: center; font-size: 36px;">
+                💪 Great job! {progress}% completed!
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Scale "party popper" emoji based on progress percentage with smaller baseline
+            size = int(12 + (progress / 100) * 24)  # Scale size between 12px and 36px
+            random_emoji = random.choice(emoji_pool)  # Pick a random emoji from the pool
+            self.st.markdown(f"""
+            <div style="text-align: center; font-size: {size}px;">
+                {random_emoji * (progress // 10)} {progress}% completed!
+            </div>
+            """, unsafe_allow_html=True)
