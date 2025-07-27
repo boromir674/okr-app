@@ -2,6 +2,7 @@ version: '3.8'
 
 networks:
   okr_network:
+    name: "okr_network_${OKR_APP_DEPLOY_MODE:-staging}"
     driver: bridge
 
 services:
@@ -53,6 +54,7 @@ services:
       retries: 5
 
   frontend:
+    container_name: "okr_frontend_${OKR_APP_DEPLOY_MODE:-staging}"
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -119,9 +121,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@okr_db_${OKR_APP_DEPLOY_MODE:-staging}:5432/okr_db
     entrypoint: "pytest"
     command: ["-ra", "-vvs", "-k", "test_schema"]
 
 
 volumes:
   postgres_data:
+    name: "postgres_data_${OKR_APP_DEPLOY_MODE:-staging}"

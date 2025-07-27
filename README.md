@@ -9,7 +9,7 @@
 
 ```sh
 export OKR_APP_DEPLOY_MODE='prod'
-docker-compose up --build
+docker-compose up db backend frontend --build
 ```
 
 ## Run staging
@@ -18,7 +18,7 @@ Useful for Staging deployment, where we want some toy data to be inserted in the
 
 ```sh
 export OKR_APP_DEPLOY_MODE='staging'
-docker-compose up frontend --build
+docker-compose up db backend frontend --build
 ```
 
 ### Delete staging data to start afresh db on init
@@ -105,11 +105,20 @@ docker run -it --rm --network okr_network_dev -e OKR_BACKEND_URL -v ./frontend/a
 ### Run SQL Queries against DB
 
 ```sh
-docker exec -it okr_db_dev psql -U postgres -d okr_db -c "SELECT progress FROM objectives WHERE id = 1; SELECT progress FROM key_results WHERE id = 1;"
+export OKR_APP_DEPLOY_MODE='staging'
+# OR
+export OKR_APP_DEPLOY_MODE='prod'
+export OKR_DB_CONTAINER="okr_db_{OKR_APP_DEPLOY_MODE:-staging}"
+```
+
+---
+
+```sh
+docker exec -it ${OKR_DB_CONTAINER} psql -U postgres -d okr_db -c "SELECT progress FROM objectives WHERE id = 1; SELECT progress FROM key_results WHERE id = 1;"
 ```
 
 ```sh
-docker exec -it okr_db_staging psql -U postgres -d okr_db -c "
+docker exec -it ${OKR_DB_CONTAINER} psql -U postgres -d okr_db -c "
 SELECT 
     o.id AS objective_id, 
     o.name AS objective_name, 
@@ -120,5 +129,26 @@ SELECT
 FROM objectives o 
 LEFT JOIN key_results kr ON o.id = kr.objective_id 
 ORDER BY o.id, kr.id;
+"
+```
+
+#### View all Tables
+
+```sh
+docker exec -it ${OKR_DB_CONTAINER} psql -U postgres -d okr_db -c "
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE';
+"
+```
+
+#### View Columns and their types of 'objectives' table
+
+```sh
+docker exec -it ${OKR_DB_CONTAINER} psql -U postgres -d okr_db -c "
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'objectives';
 "
 ```
