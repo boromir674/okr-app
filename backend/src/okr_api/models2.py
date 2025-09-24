@@ -26,6 +26,18 @@ class KeyResult(Base):
     description = Column(Text, nullable=False)
     # title-like short description
     short_description = Column(String(255), nullable=True)
-    progress = Column(Integer, nullable=True, server_default="0")
-    metric = Column(String(255), nullable=True)
+
+    # Live progress tracker
+    progress = Column(Integer, nullable=True, server_default="0",
+        comment="Current progress value between min_progress_value and max_progress_value"
+    )
+    metric = Column(String(255), nullable=True, comment="Metric for measuring progress")
     unit = Column(Integer, nullable=True, server_default="1")
+
+    # Progress tracking bounds
+    min_progress_value = Column(Integer, nullable=False, server_default="0",
+        comment="Minimum value for progress tracking (>=0)"
+    )
+    max_progress_value = Column(Integer, nullable=False, server_default="100",
+        comment="Maximum value for progress tracking (>min_progress_value)"
+    )
