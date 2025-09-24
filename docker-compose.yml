@@ -11,6 +11,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: "okr_backend_${OKR_APP_DEPLOY_MODE:-staging}"
     ports:
       - "8000:8000"
     environment:
@@ -58,6 +59,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: "okr_frontend_${OKR_APP_DEPLOY_MODE:-staging}"
     environment:
       - OKR_BACKEND_URL=http://okr_backend_${OKR_APP_DEPLOY_MODE}:8000
     working_dir: /app
@@ -95,6 +97,8 @@ services:
       - ./backend/migrations:/app/migrations
     networks:
       - okr_network
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@okr_db_${OKR_APP_DEPLOY_MODE:-staging}:5432/okr_db
     depends_on:
       db:
         condition: service_healthy
