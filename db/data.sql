@@ -1,3 +1,5 @@
+-- TOY / EXAMPLE DATA useful for development, testing, demoing
+
 -- Insert Objectives
 INSERT INTO objectives (name, description, progress) VALUES
 ('Training Program', 'Complete a 12-week training program to improve fitness.', 40),
