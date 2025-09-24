@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from ..db import get_db_session
 from ..models2 import KeyResult
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 import typing as t
 
 router = APIRouter()
@@ -16,6 +16,27 @@ class KeyResultCreate(BaseModel):
     progress: float = 0.0
     metric: t.Optional[str] = None
     unit: t.Optional[int] = 1
+    min_progress_value: t.Optional[int] = 0
+    max_progress_value: t.Optional[int] = 100
+
+    @validator('min_progress_value')
+    def min_progress_value_must_be_non_negative(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('min_progress_value must be >= 0')
+        return v
+
+    @validator('max_progress_value')
+    def max_progress_value_must_be_positive(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('max_progress_value must be > 0')
+        return v
+
+    @validator('max_progress_value')
+    def max_must_be_greater_than_min(cls, v, values):
+        min_val = values.get('min_progress_value', 0)
+        if v is not None and min_val is not None and v <= min_val:
+            raise ValueError('max_progress_value must be greater than min_progress_value')
+        return v
 
 class KeyResultUpdate(BaseModel):
     """Encapsulates data for updating a Key Result."""
@@ -24,6 +45,20 @@ class KeyResultUpdate(BaseModel):
     description: t.Optional[str] = None
     metric: t.Optional[str] = None
     unit: t.Optional[int] = None
+    min_progress_value: t.Optional[int] = None
+    max_progress_value: t.Optional[int] = None
+
+    @validator('min_progress_value')
+    def min_progress_value_must_be_non_negative(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('min_progress_value must be >= 0')
+        return v
+
+    @validator('max_progress_value')
+    def max_progress_value_must_be_positive(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('max_progress_value must be > 0')
+        return v
 
 
 @router.post("/key_results")
@@ -38,6 +73,8 @@ async def create_key_result(
         progress=key_result.progress,
         metric=key_result.metric,
         unit=key_result.unit,
+        min_progress_value=key_result.min_progress_value,
+        max_progress_value=key_result.max_progress_value,
     )
     db.add(new_key_result)
     db.commit()
@@ -50,6 +87,8 @@ async def create_key_result(
         "progress": new_key_result.progress,
         "metric": new_key_result.metric,
         "unit": new_key_result.unit,
+        "min_progress_value": new_key_result.min_progress_value,
+        "max_progress_value": new_key_result.max_progress_value,
     }
 
 @router.get("/key_results/")
@@ -65,6 +104,8 @@ async def read_key_results(db: Session = Depends(get_db_session)) -> t.List[t.Di
             "progress": kr.progress,
             "metric": kr.metric,
             "unit": kr.unit,
+            "min_progress_value": kr.min_progress_value,
+            "max_progress_value": kr.max_progress_value,
         }
         for kr in sorted(key_results, key=lambda x: x.objective_id)
     ]
@@ -85,6 +126,8 @@ async def read_key_result(
         "progress": key_result.progress,
         "metric": key_result.metric,
         "unit": key_result.unit,
+        "min_progress_value": key_result.min_progress_value,
+        "max_progress_value": key_result.max_progress_value,
     }
 
 @router.put("/key_results/{key_result_id}")
@@ -106,6 +149,10 @@ async def update_key_result(
         existing_key_result.short_description = key_result.short_description
     if key_result.unit is not None:
         existing_key_result.unit = key_result.unit
+    if key_result.min_progress_value is not None:
+        existing_key_result.min_progress_value = key_result.min_progress_value
+    if key_result.max_progress_value is not None:
+        existing_key_result.max_progress_value = key_result.max_progress_value
 
     db.commit()
     db.refresh(existing_key_result)
@@ -117,6 +164,8 @@ async def update_key_result(
         "progress": existing_key_result.progress,
         "metric": existing_key_result.metric,
         "unit": existing_key_result.unit,
+        "min_progress_value": existing_key_result.min_progress_value,
+        "max_progress_value": existing_key_result.max_progress_value,
     }
 
 @router.delete("/key_results/{key_result_id}")
