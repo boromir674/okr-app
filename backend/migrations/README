@@ -1,5 +1,36 @@
-Generic single-database configuration.
+# Generic single-database configuration.
 
+When you make changes to the `ORM Model`, the `migrations` scripts
+**should be updated** (and commited) too, to help human Operators, update their "live" DB instance.
+
+## Update ORM - Guide 
+
+For example if, you have a live DB as part of **Staging** deployment locally:
+
+<table>
+<tr>
+<td><strong>Deploy Staging</strong></td>
+<td><pre><code>export OKR_APP_DEPLOY_MODE='staging' <br>docker-compose up db backend frontend --build</code></pre></td>
+</tr>
+<tr>
+<td><strong>Run only DB</strong></td>
+<td><pre><code>export OKR_APP_DEPLOY_MODE='staging' <br>docker-compose up db --build</code></pre></td>
+</tr>
+</table>
+
+1. Ensure that **live DB reflects commited "migration chain"**
+    ```sh
+    docker-compose run -it --build --rm alembic upgrade head
+    ```
+
+2. And then **generate** and **add new migration script** to the chain
+    ```sh
+    docker-compose run -it --build --rm alembic revision --autogenerate -m "<commit-like message>"
+    ```
+
+**Commit** `ORM` and `migrations` changes together!
+
+---
 
 Deploy the services in Staging: to work on DB migrations:
 
