@@ -1,7 +1,7 @@
 # Generic single-database configuration.
 
 When you make changes to the `ORM Model`, the `migrations` scripts
-**should be updated** (and commited) too, to help human Operators, update their "live" DB instance.
+**should be updated** (and commited) too, to help human Operators, update their "live" DB instance, later
 
 ## Update ORM - Guide 
 
@@ -14,7 +14,7 @@ For example if, you have a live DB as part of **Staging** deployment locally:
 </tr>
 <tr>
 <td><strong>Run only DB</strong></td>
-<td><pre><code>export OKR_APP_DEPLOY_MODE='staging' <br>docker-compose up db --build</code></pre></td>
+<td><pre><code>export OKR_APP_DEPLOY_MODE='staging' <br>docker-compose up db</code></pre></td>
 </tr>
 </table>
 
@@ -30,7 +30,44 @@ For example if, you have a live DB as part of **Staging** deployment locally:
 
 **Commit** `ORM` and `migrations` changes together!
 
+### Other operations
+
+See immenent SQL statements to be executed for live DB update
+
+```sh
+docker-compose run -it --build --rm alembic revision --sql
+```
+
+Target custom DB service using `DATABASE_URL` env var
+Example: for db exposed by default `docker-compose`
+
+```sh
+docker-compose run -it --build --rm -e DATABASE_URL=postgresql://postgres:password@localhost:5433/okr_db alembic revision --autogenerate -m "<commit-like message>"
+```
+
+## Reboot Dev DB - Guide
+
+1. Delete volume with Development (temporary) data, ie used for testing
+
+    ```sh
+    docker volume rm okr_db_staging
+    ```
+
+2. Start PostgreSQL service, create tables with [schema](../../db/schema.sql), and put some [toy data](../../db/data.sql)
+
+    ```sh
+    export OKR_APP_DEPLOY_MODE='staging' docker-compose up db
+    ```
+
+3. Apply migrations scripts to sync "live DB" with local checkout
+
+    ```sh
+    docker-compose run -it --build --rm alembic upgrade head
+    ```
+
 ---
+
+## Other
 
 Deploy the services in Staging: to work on DB migrations:
 
