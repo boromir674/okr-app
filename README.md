@@ -91,6 +91,25 @@ export OKR_API_HOST_PORT=8000  # use this to access backend service from localho
 docker run -it --rm --network okr_network_dev -e DATABASE_URL -p "${OKR_API_HOST_PORT}:8000" --name okr_api_dev okr-api-dev
 ```
 
+### Apply Database Migrations (Dev)
+
+> **Important**: Run this after starting the DB and before starting the Backend if you've pulled new changes or switched branches
+
+```sh
+# Build alembic image (if not already built)
+docker build -t okr-alembic-dev -f ./backend/Dockerfile --target alembic ./backend
+
+# Apply all pending migrations to dev database
+export DATABASE_URL="postgresql://postgres:password@okr_db_dev:5432/okr_db"
+docker run -it --rm --network okr_network_dev -e DATABASE_URL -v ./backend/alembic.ini:/app/alembic.ini -v ./backend/migrations:/app/migrations --entrypoint alembic okr-alembic-dev upgrade head
+```
+
+**When to run migrations:**
+- ✅ After `git pull` with new migration files
+- ✅ After switching branches with different migration states  
+- ✅ When backend fails with "column does not exist" errors
+- ✅ First time setting up dev environment
+
 ### Frontend
 
 ```sh
@@ -99,7 +118,7 @@ docker build -t okr-ui-dev -f ./frontend/Dockerfile ./frontend
 
 # Run Frontend on local host and 'okr_network_dev' network
 export OKR_BACKEND_URL='http://okr_api_dev:8000'
-docker run -it --rm --network okr_network_dev -e OKR_BACKEND_URL -v ./frontend/app.py:/app/app.py -v ./frontend/key_results_card.py:/app/key_results_card.py -v ./frontend/key_result_item.py:/app/key_result_item.py -v ./frontend/key_result_item_edit.py:/app/key_result_item_edit.py -v ./frontend/key_result_item_view.py:/app/key_result_item_view.py -v ./frontend/key_result_to_add_to_objective.py:/app/key_result_to_add_to_objective.py -v ./frontend/key_result_item_creation_ui.py:/app/key_result_item_creation_ui.py -v ./frontend/key_result_item_v2.py:/app/key_result_item_v2.py -v ./frontend/knowledge_base.py:/app/knowledge_base.py -p "8501:8501" -w /app --name okr_ui_dev okr-ui-dev
+docker run -it --rm --network okr_network_dev -e OKR_BACKEND_URL -v ./frontend/app.py:/app/app.py -v ./frontend/key_results_card.py:/app/key_results_card.py -v ./frontend/key_result_item.py:/app/key_result_item.py -v ./frontend/key_result_item_edit.py:/app/key_result_item_edit.py -v ./frontend/key_result_item_view.py:/app/key_result_item_view.py -v ./frontend/key_result_to_add_to_objective.py:/app/key_result_to_add_to_objective.py -v ./frontend/key_result_item_creation_ui.py:/app/key_result_item_creation_ui.py -v ./frontend/key_result_item_v2.py:/app/key_result_item_v2.py -v ./frontend/objectives_state.py:/app/objectives_state.py -v ./frontend/knowledge_base.py:/app/knowledge_base.py -p "8501:8501" -w /app --name okr_ui_dev okr-ui-dev
 ```
 
 ### Run SQL Queries against DB
