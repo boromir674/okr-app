@@ -83,18 +83,34 @@ class KeyResultItemEditUI:
 
         ## RENDER UI, accepting input in different forms ##
         
-        # RENDER Description Text Input
+        # === BASIC INFORMATION ===
+        self.st.markdown("### 📝 Basic Information")
+        
+        # RENDER Short Description Text Input
         kr_short_description = self.st.text_input(
             "Key Result Short Description",
             value=self.key_result.get("short_description", ''),
-            key=f"new_kr_short_description_{self._id}"
+            key=f"new_kr_short_description_{self._id}",
+            help="Brief title or summary of the key result"
         )
 
         # RENDER Description Text Input Area
-        kr_description = self.st.text_area("Key Result Description", value='', key=f"new_kr_description_{self._id}")
+        kr_description = self.st.text_area(
+            "Key Result Description", 
+            value='', 
+            key=f"new_kr_description_{self._id}",
+            help="Detailed description of what needs to be achieved"
+        )
         
-        # RENDER Min Progress Value Input
-        self.st.markdown("### Progress Tracking Bounds")
+        # RENDER Metric Input (moved here - right after description)
+        kr_metric = self.st.text_input(
+            "Metric (Optional)", 
+            key=f"new_kr_metric_{self._id}",
+            help="Unit of measurement (e.g., USD, users, downloads, %)"
+        )
+        
+        # === PROGRESS TRACKING BOUNDS ===
+        self.st.markdown("### 📊 Progress Tracking Bounds")
         col1, col2 = self.st.columns(2)
         
         with col1:
@@ -128,8 +144,8 @@ class KeyResultItemEditUI:
         if kr_min_progress >= kr_max_progress:
             self.st.error("⚠️ Maximum progress value must be greater than minimum progress value!")
         
-        # Render unit input field with validation
-        self.st.markdown("### Progress Unit Configuration")
+        # === PROGRESS UNIT CONFIGURATION ===
+        self.st.markdown("### ⚙️ Progress Unit Configuration")
         progress_range = kr_max_progress - kr_min_progress
         max_reasonable_unit = max(1, progress_range // 10)  # Reasonable step size
         
@@ -146,8 +162,8 @@ class KeyResultItemEditUI:
             help=f"Step size for progress updates (1 to {max_reasonable_unit})"
         )
         
-        # RENDER Progress Slider with dynamic bounds and step
-        self.st.markdown("### Current Progress")
+        # === CURRENT PROGRESS ===
+        self.st.markdown("### 📈 Current Progress")
         current_progress = self.st.session_state.get(f'progress_value_{self._id}', kr_min_progress)
         
         # Ensure current progress is within bounds
@@ -174,8 +190,5 @@ class KeyResultItemEditUI:
         if kr_max_progress > kr_min_progress:
             percentage = ((kr_progress - kr_min_progress) / (kr_max_progress - kr_min_progress)) * 100
             self.st.info(f"📊 Progress: **{percentage:.1f}%** ({kr_progress} / {kr_max_progress})")
-        
-        # RENDER Metric Input
-        kr_metric = self.st.text_input("Metric (Optional)", key=f"new_kr_metric_{self._id}")
 
         return [kr_description, kr_progress, kr_metric, kr_unit, kr_short_description, kr_min_progress, kr_max_progress]
