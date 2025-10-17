@@ -107,7 +107,11 @@ class KeyResultItem:
         # unit_value = self.st.session_state[f'unit_value_{self._id}']
 
         # RENDER the Key Result Item text Description (no title exists in data model)
-        expander_label: str = self.key_result.get('short_description', 'Description')
+        expander_label: str = self.key_result.get('short_description') or 'Key Result Details'
+        
+        # Ensure label is not empty or just whitespace
+        if not expander_label or not expander_label.strip():
+            expander_label = 'Key Result Details'
 
         with self.st.expander(expander_label, expanded=False):
             self.st.write(self.key_result['description'])
