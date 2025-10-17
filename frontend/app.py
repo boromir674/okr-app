@@ -167,6 +167,8 @@ def objectives_ui():
                         "progress": elements[1],
                         "metric": elements[2],
                         "unit": elements[3],  # Include unit value
+                        "min_progress_value": elements[5],  # Progress bounds
+                        "max_progress_value": elements[6],  # Progress bounds
                     }
                     st.session_state["key_results_for_objective"].append(new_kr)
                     st.success("New Key Result added to Objective!")
@@ -195,6 +197,8 @@ def objectives_ui():
                     "progress": kr["progress"],
                     "metric": kr["metric"],
                     "unit": kr["unit"],  # Persist unit value
+                    "min_progress_value": kr["min_progress_value"],
+                    "max_progress_value": kr["max_progress_value"],
                 }
                 kr_response = requests.post(f"{BASE_URL}/key_results",
                                             headers={"Content-Type": "application/json"},
@@ -348,30 +352,70 @@ def key_results_ui():
     
     # Create Key Result
     st.subheader("Create Key Result")
-    objective_id = st.number_input("Objective ID", min_value=1, step=1)
-    description = st.text_area("Description")
-    short_description = st.text_input("Title / Short Description")
-    progress = st.slider("Progress", min_value=0, max_value=100, step=1)
-    metric = st.text_input("Metric (Optional)")
-    unit = st.number_input("Unit (Optional)", min_value=1, max_value=99, step=1, value=1)  # Add unit input
-    if st.button("Create Key Result"):
-        payload = {
-            "objective_id": objective_id,
-            "description": description,
-            "short_description": short_description,
-            "progress": progress,
-            "metric": metric,
-            "unit": unit,  # Persist unit value
-        }
-        response = requests.post(
-            f"{BASE_URL}/key_results",
-            headers={"Content-Type": "application/json"},
-            data=json.dumps(payload),
-        )
-        if response.status_code == 200:
-            st.success("Key Result created successfully!")
+    
+    # === OBJECTIVE SELECTION ===
+    st.markdown("### 🎯 Link to Objective")
+    
+    # Fetch objectives for dropdown selection
+    objectives_response = requests.get(f"{BASE_URL}/objectives/")
+    if objectives_response.status_code == 200:
+        objectives = objectives_response.json()
+        if objectives:
+            # Create a mapping for display
+            objective_options = {f"{obj['name']} (ID: {obj['id']})": obj['id'] for obj in objectives}
+            selected_objective = st.selectbox(
+                "Select Objective",
+                options=list(objective_options.keys()),
+                key="standalone_kr_objective_selector",
+                help="Choose which objective this key result belongs to"
+            )
+            objective_id = objective_options[selected_objective]
         else:
-            st.error(f"Failed to create key result: {response.status_code} - {response.text}")
+            st.error("No objectives found. Please create an objective first.")
+            objective_id = None
+    else:
+        st.error(f"Failed to fetch objectives: {objectives_response.status_code}")
+        objective_id = None
+    
+    # === KEY RESULT FORM ===
+    if objective_id:  # Only show form if objective is selected
+        # Use the reusable KeyResultItemEditUI component
+        from key_result_item_creation_ui import KeyResultItemEditUI
+        key_result_crud_ui = KeyResultItemEditUI(st, key_result={"id": "standalone_kr"})
+        elements: t.List = key_result_crud_ui.render()
+        
+        # Extract values from the component
+        # elements = [kr_description, kr_progress, kr_metric, kr_unit, kr_short_description, kr_min_progress, kr_max_progress]
+        kr_description = elements[0]
+        kr_progress = elements[1] 
+        kr_metric = elements[2]
+        kr_unit = elements[3]
+        kr_short_description = elements[4]
+        kr_min_progress = elements[5]
+        kr_max_progress = elements[6]
+        
+        # === CREATE BUTTON ===
+        if st.button("Create Key Result", type="primary"):
+            payload = {
+                "objective_id": objective_id,
+                "description": kr_description,
+                "short_description": kr_short_description,
+                "progress": kr_progress,
+                "metric": kr_metric,
+                "unit": kr_unit,
+                "min_progress_value": kr_min_progress,
+                "max_progress_value": kr_max_progress,
+            }
+            response = requests.post(
+                f"{BASE_URL}/key_results",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(payload),
+            )
+            if response.status_code == 200:
+                st.success("Key Result created successfully!")
+                st.rerun()  # Refresh to clear form and show updated data
+            else:
+                st.error(f"Failed to create key result: {response.status_code} - {response.text}")
 
 
     # READ Key Results
