@@ -1,3 +1,4 @@
+"""The "Knowledge Base" section/Page."""
 import streamlit as st
 
 def knowledge_base_ui():

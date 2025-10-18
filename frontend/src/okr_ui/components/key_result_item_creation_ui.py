@@ -1,4 +1,14 @@
-"""Key Result creation UI - Component"""
+"""Key Result creation UI - Component
+
+Usable in:
+- 'Objectives' "Side Page" UI
+- 'Key Results' "Side Page" UI
+
+Can be rendered in the 'Objectives' "Side Page" UI, to provide KR creation UI,
+during Objective creation flow, since an Objective should have at least one KR.
+
+Can be rendered in the 'Key Results' "Side Page" UI, to provide KR creation UI.
+"""
 
 from attr import define, field, Factory
 import typing as t
@@ -7,13 +17,23 @@ import typing as t
 ## Main
 
 @define
-class KeyResultItemEditUI:
-    """Single Key Result Item (form) creation UI component.
+class KeyResultItemCreationUI:
+    """Key Result creation UI - Component
+
+    Usable in:
+    - 'Objectives' "Side Page" UI
+    - 'Key Results' "Side Page" UI
+
+    Can be rendered in the 'Objectives' "Side Page" UI, to provide KR creation UI,
+    during Objective creation flow, since an Objective should have at least one KR.
+
+    Can be rendered in the 'Key Results' "Side Page" UI, to provide KR creation UI.
 
     Args:
         st (Any): Streamlit session state object.
         key_result (dict): Dictionary containing 'id'
     """
+
     st: t.Any = field()
     key_result: t.Dict[str, t.Any] = field(factory=dict)
 

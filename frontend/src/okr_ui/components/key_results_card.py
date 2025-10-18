@@ -1,13 +1,16 @@
-"""Key Results Container"""
+"""Component to Render multiple Key Results."""
 from attr import define, field
 import typing as t
 
-from key_result_item import KeyResultItem
+from .key_result_item import KeyResultItem
 
 
 @define
 class KeyResultsCard:
     """Container Card of Key Results belonging to an Objective.
+
+    Renders each Key Result Item (in view or inline edit mode) within the Key
+    Results Card.
 
     Args:
         st (Any): Streamlit session state object.
@@ -19,7 +22,7 @@ class KeyResultsCard:
 
     def render(self):
         """
-        Render the key results card.
+        Render each Key Result Item (view/inline-edit) within the Key Results Card.
         """
         for kr in self.key_results:
             key_result_item = KeyResultItem(self.st, kr)

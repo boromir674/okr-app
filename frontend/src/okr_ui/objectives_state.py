@@ -1,3 +1,11 @@
+"""Provides data class to store in-memory the Objectives loaded from backend API.
+
+Offers methods to get and set state values for Objectives and their Key Results.
+Offers some convinient interfaces as instance methods:
+- iter_state: Iterator over state dictionary.
+- set_objective_name_state_adapted: Set Objective name using a value getter.
+- set_objective_description_state_adapted: Set Objective description using a value getter.
+"""
 import typing as t
 # from attr import define, Field
 from collections import OrderedDict
@@ -5,7 +13,15 @@ from collections import OrderedDict
 
 # @define
 class ObjectivesState:
+    """In-memory list of Objectives loaded from any data source.
 
+    Offers methods to get and set state values for Objectives and their Key Results.
+
+    Offers some convinient interfaces as instance methods:
+    - iter_state: Iterator over state dictionary.
+    - set_objective_name_state_adapted: Set Objective name using a value getter.
+    - set_objective_description_state_adapted: Set Objective description using a value getter.
+    """
     def __init__(self, objectives: t.List[t.Dict[str, t.Any]]):
         """Initialize the ObjectivesState with a list of objectives.
 

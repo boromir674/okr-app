@@ -8,12 +8,12 @@ import os
 BASE_URL = os.environ['OKR_BACKEND_URL']
 
 
-from knowledge_base import knowledge_base_ui
+from .components import knowledge_base_ui, KeyResultItemCreationUI
 
 
 def main():
     """Main function to render the Streamlit UI."""
-    st.title("OKR Management Application")
+    st.title("OKR Management Application 1")
     st.sidebar.title("Navigation")
     options = ["Dashboard", "Objectives", "Key Results", "Knowledge Base"]
     choice = st.sidebar.radio("Choose a section", options)
@@ -28,7 +28,6 @@ def main():
         knowledge_base_ui()
 
 
-from key_results_card import KeyResultsCard
 
 response = None
 
@@ -41,7 +40,12 @@ def start_up_query():
         response = requests.get(f"{BASE_URL}/objectives/")
     return response
 
-# OKR Dashboard
+
+# SIDE PAGE: OKR Dashboard
+
+# Import High level Component with Multiple KRs
+from .components import KeyResultsCard
+
 def dashboard_ui():
     """Render the Dashboard UI."""
     # RENDER
@@ -100,8 +104,9 @@ def dashboard_ui():
     else:
         st.error(f"Failed to fetch objectives: {response.status_code} - {response.text}")
 
+GG = 'GG '
 
-# Objectives CRUD UI
+# SIDE PAGE: Objectives CRUD UI
 def objectives_ui():
     """Render the Objectives section UI."""
     st.header("Manage Objectives")
@@ -126,10 +131,12 @@ def objectives_ui():
     if "key_results_for_objective" not in st.session_state:
         st.session_state["key_results_for_objective"] = []
 
+    from .objectives_state import ObjectivesState
+
     # Initialize session state from Server Data, for each Key Result under each Objective
-    from objectives_state import ObjectivesState
     state = ObjectivesState(objectives=objectives)
     flat_state_iterator = iter(state.iter_state())
+
     for objective in objectives:
         # add Objective 'name'
         key, value = next(flat_state_iterator)
@@ -153,7 +160,8 @@ def objectives_ui():
     ### STATE end ###
 
     # RENDER newyly added KR items for 'Create new Objective' flow, from session state data
-    from key_result_to_add_to_objective import KeyResultItemSelectedForObjectiveUnderConstruction as KRI
+    from .components import KeyResultItemSelectedForObjectiveUnderConstruction as KRI
+
     c = st.container()
     with c:
         for i, kr in enumerate(st.session_state["key_results_for_objective"]):
@@ -169,8 +177,8 @@ def objectives_ui():
 
         # RENDER ADD KEY RESULT button which opens Popover
         with st.popover("Add Key Result"):
-            from key_result_item_creation_ui import KeyResultItemEditUI as KRI_UI
-            key_result_crud_ui = KRI_UI(st)
+
+            key_result_crud_ui = KeyResultItemCreationUI(st)
             elements: t.List = key_result_crud_ui.render()
 
             # Add and Clear buttons
@@ -343,10 +351,10 @@ def objectives_ui():
         # Add visual separation between Objectives
         st.markdown("---")
 
-    # Delete Objective
+    # RENDER Delete Objective Section
     st.subheader("Delete Objective")
     objective_id = st.number_input("Objective ID", min_value=1, step=1, value=None)
-    # Show Objective to be deleted, given ID (state)
+    # RENDER Show Objective to be deleted, given ID (state)
     if objective_id:
         response = requests.get(f"{BASE_URL}/objectives/{objective_id}")
         if response.status_code == 200:
@@ -354,7 +362,7 @@ def objectives_ui():
             st.write(f"Objective to be deleted: {objective['name']} - {objective['description']}")
         else:
             st.error(f"Failed to fetch objective: {response.status_code} - {response.text}")
-    # Delete button
+    # RENDER Delete button
     if st.button("Delete Objective"):
         response = requests.delete(f"{BASE_URL}/objectives/{objective_id}")
         if response.status_code == 200:
@@ -363,7 +371,7 @@ def objectives_ui():
             st.error(f"Failed to delete objective: {response.status_code} - {response.text}")
 
 
-# Key Results CRUD UI
+# SIDE PAGE: Key Results CRUD UI
 def key_results_ui():
     """Render the redesigned Key Results section UI."""
     st.header("Manage Key Results")
@@ -398,8 +406,8 @@ def key_results_ui():
     # === KEY RESULT FORM ===
     if objective_id:  # Only show form if objective is selected
         # Use the reusable KeyResultItemEditUI component
-        from key_result_item_creation_ui import KeyResultItemEditUI
-        key_result_crud_ui = KeyResultItemEditUI(st, key_result={"id": "standalone_kr"})
+
+        key_result_crud_ui = KeyResultItemCreationUI(st, key_result={"id": "standalone_kr"})
         elements: t.List = key_result_crud_ui.render()
         
         # Extract values from the component

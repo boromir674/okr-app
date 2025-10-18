@@ -1,0 +1,56 @@
+# 'uv build' shall use the uv-backend (not masonry or setuptools)
+[tool.uv.build-backend]
+module-name = "okr_ui"
+module-root = "src"
+
+
+# Required to allow `uv export -o p.txt` to add the '-e .' line in
+# required to make the --no-emit-project flag have an effect
+[tool.uv]
+package = true
+
+
+[project]
+name = "okr_ui"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+
+
+#### ALLOWED PYTHON ####
+requires-python = ">=3.11"
+
+#### PROD DEPENDENCIES ####
+dependencies = [
+    "attrs>=25.3.0",
+    "streamlit>=1.46.1",
+]
+
+
+
+## DEV SEC OPS
+[tool.bandit]
+exclude_dirs = ["tests/data", "path/to/file"]
+tests = []
+skips = [
+    "B101",
+]
+
+## MUTATION TESTS
+[tool.mutmut]
+tests_dir = "tests/"
+runner = "python -m pytest -n auto"
+
+paths_to_mutate = "src/okr_ui"
+
+## BLACK
+[tool.black]
+line-length = 95
+include = '\.pyi?$'
+extend-exclude = '''
+'''
+
+## ISORT
+[tool.isort]
+profile = 'black'
+lines_after_imports = 2

@@ -6,8 +6,12 @@ import typing as t
 ## Main
 
 @define
-class KeyResultItemEdit:
+class KeyResultItemWithProgressModifiable:
     """Single Key Result Item in Edit Mode.
+    
+    Allows editing of current progress of KR and the unit/step increment added
+    when User clicks the "+1" or "-1" buttons in the progress slider, when in
+    "view mode".
 
     Args:
         st (Any): Streamlit session state object.
@@ -60,7 +64,7 @@ class KeyResultItemEdit:
                 min_value=0,
                 max_value=100,
                 value=int(progress_bar_value),
-                step=KeyResultItemEdit.STEP,
+                step=KeyResultItemWithProgressModifiable.STEP,
 
                 on_change=self.set_progress_state_adapted,
                 args=(self.key_result['id'], lambda: self.st.session_state.get(f"progress_slider_{self._id}", self.key_result["progress"])),
@@ -89,7 +93,7 @@ class KeyResultItemEdit:
             ''
             if self.st.button("\-", key=f"minus_{self.key_result['id']}", disabled=progress <= 0):
                 # self.st.session_state[f'progress_value_{self._id}'] = progress - STEP
-                self.set_progress_state(self.key_result['id'], progress - KeyResultItemEdit.STEP)
+                self.set_progress_state(self.key_result['id'], progress - KeyResultItemWithProgressModifiable.STEP)
                 # this not react: manually call re-run script to re-render given updated state
                 self.st.rerun()
         with col3:
@@ -97,7 +101,7 @@ class KeyResultItemEdit:
             ''
             ''
             if self.st.button("\+", key=f"plus_{self.key_result['id']}", disabled=progress >= 100):
-                self.set_progress_state(self.key_result['id'], progress + KeyResultItemEdit.STEP)
+                self.set_progress_state(self.key_result['id'], progress + KeyResultItemWithProgressModifiable.STEP)
                 # this not react: manually call re-run script to re-render given updated state
                 self.st.rerun()
         return [progress, unit]

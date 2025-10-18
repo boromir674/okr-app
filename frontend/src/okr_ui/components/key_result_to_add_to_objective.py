@@ -1,4 +1,4 @@
-"""Key Result Item selected for being added to an Objective."""
+"""Key Result Item under construction selected for being added to an Objective."""
 
 from attr import define, field, Factory
 import typing as t

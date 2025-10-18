@@ -47,9 +47,7 @@ RUN apk update && \
 
 # Essential build-time dependencies
 COPY --from=ghcr.io/astral-sh/uv@sha256:2381d6aa60c326b71fd40023f921a0a3b8f91b14d5db6b90402e65a635053709 /uv /uvx /bin/
-# RUN pip install --no-cache-dir --upgrade pip && \
-#     pip install --no-cache-dir poetry-core && \
-#     pip install --no-cache-dir build
+
 
 WORKDIR /app
 COPY --from=source /app .
@@ -71,21 +69,23 @@ RUN pip wheel --wheel-dir "${DISTRO_WHEELS}" -r ./requirements.txt
 FROM python_alpine AS install
 ARG DISTRO_WHEELS
 
-# If at runtime our app needs external packages, do apk install here
-# RUN apt-get update && \
-#     apt-get install -y --no-install-recommends git && \
-#     apt-get clean && \
-#     rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 # we copy the wheels built in 'build_wheels' stage
 COPY --from=build_wheels ${DISTRO_WHEELS} dist
 
-# Install wheels for our Distro and its Install/Runtime Dependencies
+# Install wheels only for our Distro's Install/Runtime Dependencies
 # in user site-packages (ie /root/.local/lib/python3.11/site-packages)
 RUN pip install --no-deps --no-cache-dir --user ./dist/*.whl
 
+## install in edit mode (smallest rebuilt time on source changes, try to verify compose develop.watch feature works)
+# copy requirements.txt, pyproject.toml and uv.lock into /app/ dir
+COPY --from=source /app .
+# copy source code
+COPY README.md .
+COPY src src
+
+RUN pip install --no-deps -e .
 
 
 
@@ -101,7 +101,8 @@ EXPOSE 8501
 
 # Command to run the Streamlit app
 # CMD ["streamlit", "run", "app.py"]
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+COPY run_app.py .
+CMD ["streamlit", "run", "run_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
 # --server.address TEXT           The address where the server will listen for
 # client and browser connections.

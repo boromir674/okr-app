@@ -1,14 +1,19 @@
-"""Key Result Item V2"""
-from attr import define, field, Factory
+"""Key Result Item in view mode, with clickable progress bar's +1/-1 buttons
+
+Should be rendered in the main Dashboard UI.
+"""
 import typing as t
-import streamlit as st
 import time
-import math
-import random
+
+from attr import define, field, Factory
+import streamlit as st
+
 
 @define
-class KeyResultItemV2:
-    """Single Key Result Item.
+class KeyResultItemView:
+    """Key Result Item in view mode, with clickable progress bar's +1/-1 buttons
+
+    Should be rendered in the main app Dashboard UI.
 
     Args:
         st (Any): Streamlit session state object.
@@ -34,7 +39,15 @@ class KeyResultItemV2:
     def _get_unit_state(self):
         """Get the unit value from session state."""
         return self.st.session_state[f'unit_value_{self._id}']
+
+    def _get_motivational_quote(self):
+        """Get the motivational quote from session state."""
+        return self.st.session_state[f'motivational_phrase_{self._id}']
     
+    def _set_motivational_quote(self, value: str):
+        """Set the motivational quote in session state."""
+        self.st.session_state[f'motivational_phrase_{self._id}'] = value
+
     def _calculate_percentage(self, progress_value=None, min_val=None, max_val=None):
         """Calculate percentage based on min/max range."""
         if progress_value is None:
@@ -62,6 +75,7 @@ class KeyResultItemV2:
         if not f'progress_value_{self._id}' in self.st.session_state:
             # Store the original progress value for calculations
             self.st.session_state[f'progress_value_{self._id}'] = self.key_result.get("original_progress", self.key_result.get("progress", 0))
+
         
         if not f'unit_value_{self._id}' in self.st.session_state:
             # Store the unit/step value for increments
@@ -69,6 +83,13 @@ class KeyResultItemV2:
         
         if not f'should_animate_{self._id}' in self.st.session_state:
             self.st.session_state[f'should_animate_{self._id}'] = False
+
+        # Use the calculated percentage for dynamic phrase generation
+        progress_percentage = self._get_display_percentage()
+
+        # on first "render" generate a quote and save to state, that way on re-render same quote can be reused
+        if not f'motivational_phrase_{self._id}' in self.st.session_state:
+            self.st.session_state[f'motivational_phrase_{self._id}'] = self._generate_motivational_phrase(progress_percentage)
         ## END STATE ##
 
         # Get progress range information as local variables
@@ -121,8 +142,7 @@ class KeyResultItemV2:
             }}
             .progress-container-{self._id} {{
                 width: 100%;
-                background-color:
- #f3f3f3;
+                background-color: #f3f3f3;
                 border-radius: 12px;
                 overflow: hidden;
             }}
@@ -147,6 +167,8 @@ class KeyResultItemV2:
             min_val = float(self.key_result.get('min_progress_value', 0))
             if self.st.button("\-", key=f"minus_{self._id}", disabled=self._get_progress_state() <= min_val):
                 self._set_progress_state(max(self._get_progress_state() - unit, min_val))
+                percentage = self._get_display_percentage()
+                self._set_motivational_quote(self._generate_motivational_phrase(percentage))
                 self.st.rerun()
         with col2:
             # Render progress bar using custom HTML
@@ -173,13 +195,14 @@ class KeyResultItemV2:
             max_val = float(self.key_result.get('max_progress_value', 100))
             if self.st.button("\+", key=f"plus_{self._id}", disabled=self._get_progress_state() >= max_val):
                 # Update progress state
-                new_progress = min(self._get_progress_state() + unit, max_val)
-                self._set_progress_state(new_progress)
+                self._set_progress_state(min(self._get_progress_state() + unit, max_val))
 
-                # Show congratulatory message with percentage
                 percentage = self._get_display_percentage()
+                # update motivational quote state
+                self._set_motivational_quote(self._generate_motivational_phrase(percentage))
                 self.st.session_state[f'congratulations_{self._id}'] = f"Bravo re malaka!!! Progress updated to {percentage:.1f}% 🎉"
                 self.st.session_state[f'congratulations_timestamp_{self._id}'] = time.time()
+                # Show congratulatory message with percentage
                 self.st.toast(self.st.session_state[f'congratulations_{self._id}'], icon="✅")
 
                 # Trigger re-render for animation
@@ -188,32 +211,22 @@ class KeyResultItemV2:
                 assert 1 == 0  # this never runs, but is here to illustrate that the re-rendering is necessary to show the updated state
 
         ## Dynamic Themed Motivational Phrases ##
-        # Use the calculated percentage for dynamic phrase generation
-        progress_percentage = self._get_display_percentage()
-        
-        # Generate motivational phrase using theme system
-        motivational_phrase = self._generate_motivational_phrase(progress_percentage)
         
         # Render the dynamic phrase
         self.st.markdown(f"""
         <div style="text-align: center; font-size: 24px; margin: 10px 0; padding: 15px; 
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     border-radius: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-            {motivational_phrase}
+            {self.st.session_state[f'motivational_phrase_{self._id}']}
         </div>
         """, unsafe_allow_html=True)
-    
+
     def _generate_motivational_phrase(self, percentage: float) -> str:
         """Generate dynamic motivational phrase using theme system"""
-        try:
-            from motivational_themes import MotivationalThemeManager
-            
-            # Initialize theme manager (could be cached as class variable in production)
-            if not hasattr(self, '_theme_manager'):
-                self._theme_manager = MotivationalThemeManager()
-            
-            return self._theme_manager.generate_phrase(percentage)
+        from ..motivational_themes import MotivationalThemeManager
         
-        except Exception as e:
-            # Graceful fallback to simple message
-            return f"Incredible progress! You're at {percentage:.1f}% 🌟"
+        # Initialize theme manager (could be cached as class variable in production)
+        if not hasattr(self, '_theme_manager'):
+            theme_manager = MotivationalThemeManager()
+        
+        return theme_manager.generate_phrase(percentage)

@@ -1,16 +1,22 @@
-"""Key Result Item"""
-from attr import define, field, Factory
+"""Key Result Item in View or Edit mode, with User toggable modes.
+
+Composes 2 Components, conditionally rendered, with User toggling:
+- KR in view mode, with clickable +1/-1 progress bar buttons
+- KR in progress-edit mode, with ability to edit Progress and Step/Unit value
+"""
 import typing as t
-import requests
 import json
 import os
 
-# Designed to render data
-# from key_result_item_view import KeyResultItemView
-from key_result_item_v2 import KeyResultItemV2 as KeyResultItemView
+from attr import define, field, Factory
+import requests
 
-# Designed as to accept User input (ie input, sliders, forms)
-from key_result_item_edit import KeyResultItemEdit
+
+# Import KR Component for View Mode, with clickable +1/-1 progress bar buttons
+from .key_result_item_view import KeyResultItemView
+
+# Import KR Component for Edit Mode, with progress and unit/step editing
+from .key_result_item_progress_modification import KeyResultItemWithProgressModifiable
 
 ## Helpers
 
@@ -53,7 +59,13 @@ def set_edit_mode_state(self, kr_id: int, value: bool):
 
 @define
 class KeyResultItem:
-    """Single Key Result Item.
+    """Key Result Item Component with toggable View/Edit modes.
+
+    Composes 2 Components, conditionally rendered, with User toggling:
+    - KR in view mode, with clickable +1/-1 progress bar buttons
+    - KR in progress-edit mode, with ability to edit Progress and Step/Unit value
+    """
+    """Key Result in view/edit mode, with ability to edit Progress and Step/Unit value.
 
     Args:
         st (Any): Streamlit session state object.
@@ -118,7 +130,10 @@ class KeyResultItem:
 
         ## EDIT MODE
         if self.st.session_state[f'edit_{self._id}']:
-            key_result_item = KeyResultItemEdit(self.st, self.key_result)
+            # RENDER KR with editable
+            # - Entity value: current "Progress" value, directly via number input
+            # - UI value: Unit/Step value (on User click on +1/-1 of progress bar), directly via number input
+            key_result_item = KeyResultItemWithProgressModifiable(self.st, self.key_result)
             key_result_item.render()             
 
             put_key_results = create_put_key_results_callback({
@@ -146,7 +161,7 @@ class KeyResultItem:
                 else:
                     self.st.error(f"Failed to update progress: {update_response.status_code}")
 
-        ## VIEW MODE
+        ## VIEW MODE Key Result rendering
         else:
             key_result_item = KeyResultItemView(self.st, {  # Pass all necessary fields for proper calculation
                 'id': self.key_result['id'],
