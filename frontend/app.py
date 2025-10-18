@@ -73,6 +73,24 @@ def dashboard_ui():
                             key_results_of_current_objective = sorted([kr for kr in all_key_results_in_db if kr["objective_id"] == obj["id"]], 
                                                                       key=lambda x: x["id"], reverse=False)
 
+                            # Calculate proper percentage based on min/max progress values
+                            for kr in key_results_of_current_objective:
+                                min_val = kr.get("min_progress_value", 0)
+                                max_val = kr.get("max_progress_value", 100)
+                                current_val = kr.get("progress", 0)
+                                
+                                # Calculate percentage based on actual range
+                                if max_val > min_val:
+                                    actual_percentage = ((current_val - min_val) / (max_val - min_val)) * 100
+                                else:
+                                    actual_percentage = 0
+                                
+                                # Update the progress field with calculated percentage
+                                kr["calculated_percentage"] = round(actual_percentage, 1)
+                                # Keep original for reference
+                                kr["original_progress"] = current_val
+                                kr["progress_range"] = f"{min_val}-{max_val}"
+
                             # Key Results Card Component
                             # Render Key Results Card for Objective
                             key_results_card = KeyResultsCard(st, key_results_of_current_objective)

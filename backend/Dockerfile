@@ -165,6 +165,6 @@ ENV PATH="/root/.local/bin:$PATH"
 
 # Expose the backend port
 EXPOSE 8000
-CMD ["-m", "okr_api.run_server"]
 
-ENTRYPOINT [ "python" ]
+# Production command (no reload)
+CMD ["uvicorn", "okr_api.create_app:create_app", "--host", "0.0.0.0", "--port", "8000", "--factory"]

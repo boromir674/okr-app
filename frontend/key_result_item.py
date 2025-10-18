@@ -148,11 +148,16 @@ class KeyResultItem:
 
         ## VIEW MODE
         else:
-            key_result_item = KeyResultItemView(self.st, {  # only progress is reactive
+            key_result_item = KeyResultItemView(self.st, {  # Pass all necessary fields for proper calculation
                 'id': self.key_result['id'],
                 'description': self.key_result['description'],
                 'progress': self._get_progress_state(self._id, progress_bar_value),
                 'metric': self.key_result.get('metric', None),
+                'min_progress_value': self.key_result.get('min_progress_value', 0),
+                'max_progress_value': self.key_result.get('max_progress_value', 100),
+                'step': self.key_result.get('step', 1),
+                'original_progress': self.key_result.get('original_progress'),
+                'calculated_percentage': self.key_result.get('calculated_percentage'),
             })
             # 2 columns where left column is 5:1 ratio in width to the right column
             cols = self.st.columns([5, 1])

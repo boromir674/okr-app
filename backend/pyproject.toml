@@ -1,6 +1,6 @@
 # 'uv build' shall use the uv-backend (not masonry or setuptools)
 [tool.uv.build-backend]
-module-name = "yt_content_creation_toolkit"
+module-name = "okr_api"
 module-root = "src"
 
 # Required to allow `uv export -o p.txt` to add the '-e .' line in
@@ -74,7 +74,7 @@ skips = [
 tests_dir = "tests/"
 runner = "python -m pytest -n auto"
 
-paths_to_mutate = "src/yt_content_creation_toolkit"
+paths_to_mutate = "src/okr_api"
 
 [tool.black]
 line-length = 95
