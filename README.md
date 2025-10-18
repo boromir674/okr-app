@@ -4,17 +4,26 @@
 
 **OKR App** is an open-source `Objectives and Key Results` full-stack application.
 
+## 🚀 Production Deployment
 
-## Run in prod
+For comprehensive production deployment instructions, including zero-downtime database migrations and data protection strategies, see:
+
+**📋 [Production Deployment Guide](./PRODUCTION.md)**
+
+### Quick Start (Production)
 
 ```sh
 export OKR_APP_DEPLOY_MODE='prod'
-docker-compose up db backend frontend --build
+docker-compose up db backend frontend --build -d
 ```
 
-## Run staging
+**⚠️ Important**: Before deploying updates to production with database changes, follow the [safe migration procedures](./PRODUCTION.md#-production-database-migrations-zero-data-loss) in the production guide.
 
-Useful for Staging deployment, where we want some toy data to be inserted in the DB
+---
+
+## 🧪 Staging Environment
+
+Useful for staging deployment with test data for development and testing purposes.
 
 ```sh
 export OKR_APP_DEPLOY_MODE='staging'
@@ -56,6 +65,26 @@ docker-compose up db backend frontend --build
 
 
 ## Dev Setup to iterate fast
+
+### Quick-start
+
+| Service | Commands | Runtime Behavior |
+|---------|----------|------------------|
+| **Database** | <pre><code>export OKR_APP_DEPLOY_MODE=dev&#10;export DB_HOST_PORT=5431&#10;docker-compose -f docker-compose.yml -f docker-compose.dev.yml up db</code></pre> | Starts with **persistent volume** - dev data preserved between restarts. Initializes with schema + test data on first run. |
+| **Backend** | <pre><code>docker-compose -f docker-compose.yml -f docker-compose.dev.yml up backend</code></pre> | Server starts with current code. **Auto-reloads** on `/backend/src` changes - no restart needed! |
+| **Frontend** | <pre><code>docker-compose -f docker-compose.yml -f docker-compose.dev.yml up frontend</code></pre> | Server starts with current code. Code changes require **manual refresh** or hitting "Rerun" button in browser. |
+
+**Verification Commands:**
+- **Database:** `docker exec -it okr_db_dev psql -U postgres -d okr_db -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"`
+- **Backend:** `docker exec okr_backend_dev python -c "import urllib.request; response = urllib.request.urlopen('http://localhost:8000/openapi.json'); import json; import pprint; pprint.pprint(json.loads(response.read()));"`
+- **Frontend:** Open `http://localhost:8501` in browser
+
+**Apply migration to Live Dev DB:**
+```sh
+docker-compose run -it --build --rm alembic upgrade head
+```
+
+---
 
 > Iterate fast on UI changes with only restarting UI service
 
