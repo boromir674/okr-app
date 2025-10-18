@@ -60,6 +60,13 @@ class KeyResultUpdate(BaseModel):
             raise ValueError('max_progress_value must be > 0')
         return v
 
+    @validator('max_progress_value')
+    def max_must_be_greater_than_min_update(cls, v, values):
+        min_val = values.get('min_progress_value')
+        if v is not None and min_val is not None and v <= min_val:
+            raise ValueError('max_progress_value must be greater than min_progress_value')
+        return v
+
 
 @router.post("/key_results")
 async def create_key_result(
