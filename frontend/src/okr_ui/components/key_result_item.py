@@ -156,7 +156,7 @@ class KeyResultItem:
                     # key_result_item.render()
                     
                     # this is steamlit, re-render is auto-triggered on user interaction, not on state change as react!
-                    # manually call re-run (renderer) script, because state changed
+                    # manually call re-run (renderer) script, because state changed and UI elements rely on state values
                     self.st.rerun()
                 else:
                     self.st.error(f"Failed to update progress: {update_response.status_code}")
@@ -167,10 +167,10 @@ class KeyResultItem:
                 'id': self.key_result['id'],
                 'description': self.key_result['description'],
                 'progress': self._get_progress_state(self._id, progress_bar_value),
-                'metric': self.key_result.get('metric', None),
+                'metric': self.key_result.get('metric', None),  # Display label (e.g., 'Sessions per week')
                 'min_progress_value': self.key_result.get('min_progress_value', 0),
                 'max_progress_value': self.key_result.get('max_progress_value', 100),
-                'step': self.key_result.get('step', 1),
+                'unit': self.key_result.get('unit', self.key_result.get('step', 1)),  # Step size for +/- buttons (numeric)
                 'original_progress': self.key_result.get('original_progress'),
                 'calculated_percentage': self.key_result.get('calculated_percentage'),
             })

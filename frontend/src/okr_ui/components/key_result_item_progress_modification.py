@@ -29,6 +29,10 @@ class KeyResultItemWithProgressModifiable:
     def set_progress_state(self, kr_id: int, value: float):
         """Set the progress value in session state."""
         self.st.session_state[f'progress_value_{kr_id}'] = value
+    
+    def _get_progress_state(self):
+        """Get the progress value of this KR from session state."""
+        return self.st.session_state[f'progress_value_{self._id}']
 
     def set_progress_state_adapted(self, kr_id: int, value_getter: t.Callable[[], float]):
         """Set the progress value in session state using a value getter."""
@@ -61,8 +65,8 @@ class KeyResultItemWithProgressModifiable:
             # render Interactive slider
             progress = self.st.slider(
                 f"Progress:",
-                min_value=0,
-                max_value=100,
+                min_value=self.key_result.get('min_progress_value', 0),
+                max_value=self.key_result.get('max_progress_value', 100),
                 value=int(progress_bar_value),
                 step=KeyResultItemWithProgressModifiable.STEP,
 
@@ -71,12 +75,19 @@ class KeyResultItemWithProgressModifiable:
 
                 key=f"progress_slider_{self._id}",
             )
+            # Render Metric name and Percentage of progress in a nice formatted way
+            self.st.markdown(f"""
+            <div style="text-align: center; margin-top: 8px; font-size: 14px; color: #666;">
+                {self.key_result.get('metric', 'points')}
+                <span style="margin-left: 10px; color: #4caf50; font-weight: bold;">({self._calculate_percentage():.1f}%)</span>
+            </div>
+            """, unsafe_allow_html=True)
 
             # Render unit input field
             # value to use for next render, use state value since this takes into account units value set in ui (regardless of whether it was persisted (yet))
             units_value_to_redner = self.st.session_state.get(f'unit_value_{self._id}', self.key_result.get("unit", 1))
             unit = self.st.number_input(
-                "Unit (Optional):",
+                "Step (unit):",
                 min_value=1,
                 max_value=99,
                 value=units_value_to_redner,
@@ -105,3 +116,17 @@ class KeyResultItemWithProgressModifiable:
                 # this not react: manually call re-run script to re-render given updated state
                 self.st.rerun()
         return [progress, unit]
+
+    def _calculate_percentage(self, progress_value=None, min_val=None, max_val=None):
+        """Calculate percentage based on min/max range."""
+        if progress_value is None:
+            progress_value = self._get_progress_state()
+        if min_val is None:
+            min_val = float(self.key_result.get('min_progress_value', 0))
+        if max_val is None:
+            max_val = float(self.key_result.get('max_progress_value', 100))
+            
+        if max_val > min_val:
+            percentage = ((progress_value - min_val) / (max_val - min_val)) * 100
+            return max(0, min(100, percentage))  # Clamp between 0-100%
+        return 0

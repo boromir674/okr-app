@@ -1,8 +1,12 @@
+import logging
 import typing as t
 import streamlit as st
 import requests
 import json
 import os
+
+
+logger = logging.getLogger(__name__)
 
 
 BASE_URL = os.environ['OKR_BACKEND_URL']
@@ -38,6 +42,14 @@ def start_up_query():
     if not response:
         # Make a GET request to fetch objectives
         response = requests.get(f"{BASE_URL}/objectives/")
+        logger.info("Startup query response status: %s", json.dumps({
+            "response_status": response.status_code,
+            "response_body": response.text,
+        }))
+        print("Startup query response status: %s", json.dumps({
+            "response_status": response.status_code,
+            "response_body": response.text,
+        }))
     return response
 
 
@@ -59,13 +71,13 @@ def dashboard_ui():
         slices  = (first_slice, second_slice)
         for y in range(2):
             cols = st.columns(2)
-            for i, obj in enumerate(objectives[slices[y][0]:slices[y][1]]):
+            for i, objective in enumerate(objectives[slices[y][0]:slices[y][1]]):
                 with cols[i]:
                     # RENDER Objective Name
-                    st.subheader(obj["name"])
+                    st.subheader(objective["name"])
                     # RENDER Objective Description as expander
                     with st.expander("Description"):
-                        st.write(obj["description"])
+                        st.write(objective["description"])
                     # RENDER expander, which pushes elemnt below in grid when opened !
                     with st.expander("Key Results"):
 
@@ -74,7 +86,7 @@ def dashboard_ui():
                         if key_results_response.status_code == 200:
 
                             all_key_results_in_db = key_results_response.json()
-                            key_results_of_current_objective = sorted([kr for kr in all_key_results_in_db if kr["objective_id"] == obj["id"]], 
+                            key_results_of_current_objective = sorted([kr for kr in all_key_results_in_db if kr["objective_id"] == objective["id"]], 
                                                                       key=lambda x: x["id"], reverse=False)
 
                             # Calculate proper percentage based on min/max progress values
@@ -104,7 +116,6 @@ def dashboard_ui():
     else:
         st.error(f"Failed to fetch objectives: {response.status_code} - {response.text}")
 
-GG = 'GG '
 
 # SIDE PAGE: Objectives CRUD UI
 def objectives_ui():

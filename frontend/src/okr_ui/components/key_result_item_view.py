@@ -79,7 +79,7 @@ class KeyResultItemView:
         
         if not f'unit_value_{self._id}' in self.st.session_state:
             # Store the unit/step value for increments
-            self.st.session_state[f'unit_value_{self._id}'] = self.key_result.get("step", self.STEP)
+            self.st.session_state[f'unit_value_{self._id}'] = self.key_result.get("unit", self.STEP)
         
         if not f'should_animate_{self._id}' in self.st.session_state:
             self.st.session_state[f'should_animate_{self._id}'] = False
@@ -91,11 +91,6 @@ class KeyResultItemView:
         if not f'motivational_phrase_{self._id}' in self.st.session_state:
             self.st.session_state[f'motivational_phrase_{self._id}'] = self._generate_motivational_phrase(progress_percentage)
         ## END STATE ##
-
-        # Get progress range information as local variables
-        min_progress = float(self.key_result.get("min_progress_value", 0))
-        max_progress = float(self.key_result.get("max_progress_value", 100))
-        current_progress = self.st.session_state[f'progress_value_{self._id}']
 
         # CSS for liquid fill animation
         if self.st.session_state[f'should_animate_{self._id}']:
@@ -175,6 +170,24 @@ class KeyResultItemView:
             self.st.markdown(f"""
             <div class="progress-container-{self._id}">
                 <div class="progress-bar-{self._id}"></div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Render progress information: raw count and percentage
+            current_value = self._get_progress_state()
+            percentage = self._get_display_percentage()
+            min_val = self.key_result.get('min_progress_value', 0)
+            max_val = self.key_result.get('max_progress_value', 100)
+            
+            # Use 'metric' field for display label (e.g., 'sessions', 'kg', 'minutes')
+            # 'unit' field is for step size (numeric), 'metric' is for display label (string)
+            metric = self.key_result.get('metric') or 'points'
+
+            # Progress stats in a nice formatted way
+            self.st.markdown(f"""
+            <div style="text-align: center; margin-top: 8px; font-size: 14px; color: #666;">
+                <strong>{current_value:.1f}</strong> / <strong>{max_val}</strong> {metric} 
+                <span style="margin-left: 10px; color: #4caf50; font-weight: bold;">({percentage:.1f}%)</span>
             </div>
             """, unsafe_allow_html=True)
         if self.st.session_state[f'should_animate_{self._id}'] == True:
