@@ -171,10 +171,14 @@ SELECT
     o.id AS objective_id, 
     o.name AS objective_name, 
     o.progress AS objective_progress, 
-    kr.id AS key_result_id, 
-    kr.description AS key_result_description,
-    kr.progress AS key_result_progress,
-    kr.unit AS key_result_unit
+    kr.id AS kr_id, 
+    kr.description AS kr_description,
+    kr.short_description AS kr_short_desc,
+    kr.unit AS kr_unit,
+    kr.metric AS kr_metric,
+    kr.min_progress_value as kr_min,
+    kr.progress AS kr_progress,
+    kr.max_progress_value as kr_max
 FROM objectives o 
 LEFT JOIN key_results kr ON o.id = kr.objective_id 
 ORDER BY o.id, kr.id;
