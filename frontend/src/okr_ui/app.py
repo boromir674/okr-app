@@ -62,7 +62,11 @@ def dashboard_ui():
     """Render the Dashboard UI."""
     # RENDER
     st.header("Dashboard: Recent Objectives")
-    response = start_up_query()
+
+    # OLD: response = start_up_query()
+    # NEW: Make a GET request to fetch objectives
+    response = requests.get(f"{BASE_URL}/objectives/")
+
     if response.status_code == 200:
         objectives = response.json()
         # Display top 4 objectives in a grid layout
@@ -192,7 +196,7 @@ def objectives_ui():
             key_result_crud_ui = KeyResultItemCreationUI(st)
             elements: t.List = key_result_crud_ui.render()
 
-            # Add and Clear buttons
+            # RENDER 'Add' button
             cols = st.columns([1, 1], gap="small")
             import uuid
             with cols[0]:
@@ -210,6 +214,8 @@ def objectives_ui():
                     st.session_state["key_results_for_objective"].append(new_kr)
                     st.success("New Key Result added to Objective!")
                     st.rerun()
+
+            # RENDER 'Clear' button
             with cols[1]:
                 if st.button("Clear", key="clear_key_results"):
                     for el in elements:
@@ -237,6 +243,7 @@ def objectives_ui():
                     "min_progress_value": kr["min_progress_value"],
                     "max_progress_value": kr["max_progress_value"],
                 }
+                # CREATE KR in DB
                 kr_response = requests.post(f"{BASE_URL}/key_results",
                                             headers={"Content-Type": "application/json"},
                                             data=json.dumps(kr_payload))
@@ -296,14 +303,39 @@ def objectives_ui():
     """, unsafe_allow_html=True)
 
     # Iteratively Render objectives from state data, in a catalog-style layout
-    for objective_id, objective_dict in state:
-        
+    response = requests.get(f"{BASE_URL}/objectives/")
+    objectives_list_of_objects: t.List[t.Dict[str, t.Any]] = response.json()
+
+    objectives = ObjectivesState(objectives=objectives_list_of_objects)
+
+    # for objective_id, objective_dict in state:
+    for objective_id, objective_dict in iter(objectives):
+
         obj_name = objective_dict.get("name", "")
         description = objective_dict.get("description", "")
 
+        # Add prominent header for visual clarity
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            margin: 20px 0 15px 0;
+            border-radius: 10px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        ">
+            <h2 style="margin: 0; font-size: 24px; font-weight: bold;">
+                🎯 {obj_name or f'Objective {objective_id}'}
+            </h2>
+            <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">
+                ID: {objective_id}
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
         # Render Editable Objective Name
         obj_name = st.text_input(
-            f"Objective Name (ID: {objective_id})",
+            f"Edit Objective Name:",
             value=obj_name,
 
             on_change=state.set_objective_name_state_adapted,
@@ -314,7 +346,7 @@ def objectives_ui():
 
         # Render Editable Objective Description
         obj_description = st.text_area(
-            f"Objective Description (ID: {objective_id})",
+            f"Edit Objective Description:",
             value=description,
 
             on_change=state.set_objective_description_state_adapted,
@@ -365,6 +397,7 @@ def objectives_ui():
     # RENDER Delete Objective Section
     st.subheader("Delete Objective")
     objective_id = st.number_input("Objective ID", min_value=1, step=1, value=None)
+
     # RENDER Show Objective to be deleted, given ID (state)
     if objective_id:
         response = requests.get(f"{BASE_URL}/objectives/{objective_id}")
@@ -373,11 +406,13 @@ def objectives_ui():
             st.write(f"Objective to be deleted: {objective['name']} - {objective['description']}")
         else:
             st.error(f"Failed to fetch objective: {response.status_code} - {response.text}")
+
     # RENDER Delete button
     if st.button("Delete Objective"):
         response = requests.delete(f"{BASE_URL}/objectives/{objective_id}")
         if response.status_code == 200:
             st.success("Objective deleted successfully!")
+            # st.rerun()  # manually trigger re-render
         else:
             st.error(f"Failed to delete objective: {response.status_code} - {response.text}")
 
