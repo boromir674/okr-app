@@ -11,8 +11,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: "okr_backend_${OKR_APP_DEPLOY_MODE:-staging}"
-    ports:
-      - "${BACKEND_HOST_PORT:-8000}:8000"
+    # ports:
+    #   - "${BACKEND_HOST_PORT:-8000}:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/okr_db
     networks:
@@ -29,8 +29,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: okr_db
-    ports:
-      - "${DB_HOST_PORT:-5432}:5432"
+    # ports:
+    #   - "${DB_HOST_PORT:-5432}:5432"
     volumes:
       # Raw data file storage, using dedicated persistent volume
       - postgres_data:/var/lib/postgresql/data
@@ -63,8 +63,9 @@ services:
       - OKR_BACKEND_URL=http://okr_backend_${OKR_APP_DEPLOY_MODE}:8000
       - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
     working_dir: /app
+    # frontend service must be bind to one host port to enable host browser access
     ports:
-      - "${FRONTEND_HOST_PORT:-8501}:8501"
+      - "${OKR_FRONTEND_HOST_PORT:-8502}:8501"
     depends_on:
       - backend
     networks:
