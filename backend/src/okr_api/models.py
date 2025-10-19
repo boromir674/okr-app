@@ -22,6 +22,7 @@ class KeyResult(Base):
     __tablename__ = 'key_results'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    # when ondelete='CASCADE', deleting an Objective deletes its Key Results
     objective_id = Column(Integer, ForeignKey('objectives.id', ondelete='CASCADE'), nullable=False)
     description = Column(Text, nullable=False)
     # title-like short description

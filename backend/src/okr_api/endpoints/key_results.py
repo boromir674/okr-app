@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from ..db import get_db_session
-from ..models2 import KeyResult
+from ..models import KeyResult
 from pydantic import BaseModel, validator
 import typing as t
 

@@ -25,7 +25,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support, in `alembic revision --autogenerate`
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from okr_api.models2 import metadata
+from okr_api.models import metadata
 target_metadata = [metadata]
 # target_metadata = None
 
